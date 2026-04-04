@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="مصروفاتي">
+<meta name="theme-color" content="#0f1117">
+<title>مصروفاتي</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: rgba(255,255,255,0.07);
+    --accent: #6c63ff;
+    --accent2: #ff6584;
+    --green: #2dd4bf;
+    --yellow: #fbbf24;
+    --red: #f87171;
+    --text: #e8eaf0;
+    --muted: #7b7f94;
+    --font: 'IBM Plex Sans Arabic', sans-serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    position: sticky; top:0; z-index:100;
+    background: rgba(15,17,23,0.85);
+    backdrop-filter: blur(20px);
+    padding: 14px 20px;
+    display: flex; align-items:center; justify-content:space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  .topbar h1 { font-size:1.1rem; font-weight:700; letter-spacing:-.3px; }
+  .topbar h1 span { color: var(--accent); }
+  .month-badge {
+    background: var(--surface2);
+    padding: 5px 12px; border-radius:20px;
+    font-size:.78rem; color: var(--muted);
+  }
+
+  /* ── TABS ── */
+  .tabs {
+    display:flex; gap:4px;
+    background: var(--surface);
+    margin: 16px; border-radius:14px; padding:4px;
+  }
+  .tab {
+    flex:1; padding:10px 0;
+    border:none; background:none; color:var(--muted);
+    font-family:var(--font); font-size:.85rem; font-weight:500;
+    border-radius:10px; cursor:pointer; transition:.2s;
+  }
+  .tab.active { background: var(--accent); color:#fff; }
+
+  /* ── PANELS ── */
+  .panel { display:none; padding:0 16px 100px; }
+  .panel.active { display:block; }
+
+  /* ── SUMMARY CARDS ── */
+  .summary-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+  .sum-card {
+    background: var(--surface); border-radius:16px; padding:16px;
+    border: 1px solid var(--border);
+  }
+  .sum-card.full { grid-column:1/-1; }
+  .sum-label { font-size:.72rem; color:var(--muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:.5px; }
+  .sum-value { font-size:1.4rem; font-weight:700; }
+  .sum-value.green { color: var(--green); }
+  .sum-value.red { color: var(--red); }
+  .sum-value.yellow { color: var(--yellow); }
+
+  /* progress bar */
+  .progress-wrap { margin-top:10px; }
+  .progress-bar {
+    height:6px; background: var(--surface2); border-radius:99px; overflow:hidden;
+  }
+  .progress-fill {
+    height:100%; border-radius:99px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width .5s ease;
+  }
+  .progress-labels { display:flex; justify-content:space-between; font-size:.7rem; color:var(--muted); margin-top:5px; }
+
+  /* ── SALARY SETUP ── */
+  .setup-card {
+    background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%);
+    border-radius:18px; padding:20px; margin-bottom:16px;
+    position:relative; overflow:hidden;
+  }
+  .setup-card::after {
+    content:''; position:absolute; top:-30px; right:-30px;
+    width:100px; height:100px; border-radius:50%;
+    background: rgba(255,255,255,0.08);
+  }
+  .setup-card h3 { font-size:.9rem; margin-bottom:12px; opacity:.9; }
+  .setup-row { display:flex; gap:8px; align-items:center; }
+  .setup-input {
+    flex:1; background: rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.2);
+    color:#fff; padding:10px 14px; border-radius:10px;
+    font-family:var(--font); font-size:1rem; outline:none;
+    direction:ltr; text-align:right;
+  }
+  .setup-input::placeholder { color:rgba(255,255,255,0.4); }
+  .btn-save {
+    background: rgba(255,255,255,0.2); border:none; color:#fff;
+    padding:10px 16px; border-radius:10px; font-family:var(--font);
+    font-size:.85rem; cursor:pointer; white-space:nowrap;
+  }
+
+  /* ── COMMITMENTS ── */
+  .section-title {
+    font-size:.8rem; font-weight:600; color:var(--muted);
+    text-transform:uppercase; letter-spacing:.6px;
+    margin-bottom:10px; margin-top:20px;
+  }
+  .commit-item {
+    background: var(--surface); border-radius:14px; padding:14px 16px;
+    display:flex; align-items:center; gap:12px; margin-bottom:8px;
+    border: 1px solid var(--border);
+  }
+  .commit-icon { font-size:1.4rem; width:36px; text-align:center; flex-shrink:0; }
+  .commit-info { flex:1; }
+  .commit-name { font-size:.9rem; font-weight:500; }
+  .commit-amount { font-size:.8rem; color:var(--red); margin-top:2px; }
+  .btn-del {
+    background:none; border:none; color:var(--muted); font-size:1.1rem;
+    cursor:pointer; padding:4px;
+  }
+
+  /* ── ADD FORM ── */
+  .add-form {
+    background: var(--surface); border-radius:18px; padding:18px;
+    border:1px solid var(--border); margin-bottom:12px;
+  }
+  .form-title { font-size:.95rem; font-weight:600; margin-bottom:14px; }
+  .field { margin-bottom:12px; }
+  .field label { font-size:.78rem; color:var(--muted); display:block; margin-bottom:6px; }
+  .field input, .field select, .field textarea {
+    width:100%; background: var(--surface2); border:1px solid var(--border);
+    color:var(--text); padding:10px 14px; border-radius:10px;
+    font-family:var(--font); font-size:.9rem; outline:none;
+    transition:.2s;
+  }
+  .field input:focus, .field select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(108,99,255,.15);
+  }
+  .field select option { background: var(--surface2); }
+  .field-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .btn-primary {
+    width:100%; background: var(--accent); border:none; color:#fff;
+    padding:13px; border-radius:12px; font-family:var(--font);
+    font-size:.95rem; font-weight:600; cursor:pointer;
+    transition:.2s; letter-spacing:.2px;
+  }
+  .btn-primary:active { transform:scale(.98); }
+
+  /* ── EXPENSE LIST ── */
+  .expense-item {
+    background: var(--surface); border-radius:14px; padding:14px 16px;
+    display:flex; align-items:flex-start; gap:12px; margin-bottom:8px;
+    border: 1px solid var(--border); animation: slideIn .25s ease;
+    position:relative; overflow:hidden;
+  }
+  @keyframes slideIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+  .exp-left { display:flex; flex-direction:column; align-items:center; gap:4px; flex-shrink:0; }
+  .exp-emoji { font-size:1.5rem; }
+  .cat-badge {
+    font-size:.6rem; padding:2px 7px; border-radius:99px; font-weight:600;
+    white-space:nowrap; letter-spacing:.3px;
+  }
+  .cat-ضروري { background:rgba(45,212,191,.15); color:var(--green); }
+  .cat-كمالي { background:rgba(251,191,36,.12); color:var(--yellow); }
+  .cat-استغنِ { background:rgba(248,113,113,.12); color:var(--red); }
+  .cat-التزام { background:rgba(108,99,255,.15); color:var(--accent); }
+  .exp-body { flex:1; min-width:0; }
+  .exp-name { font-size:.9rem; font-weight:500; }
+  .exp-desc { font-size:.75rem; color:var(--muted); margin-top:2px; line-height:1.4; }
+  .exp-ai { font-size:.72rem; color:var(--accent); margin-top:5px; font-style:italic; }
+  .exp-right { text-align:left; flex-shrink:0; }
+  .exp-amount { font-size:1rem; font-weight:700; color:var(--red); }
+  .exp-date { font-size:.68rem; color:var(--muted); margin-top:2px; }
+
+  /* ── AI REPORT ── */
+  .report-card {
+    background: var(--surface); border-radius:18px; padding:20px;
+    border:1px solid var(--border); margin-bottom:12px;
+  }
+  .report-header { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+  .report-icon { font-size:1.6rem; }
+  .report-header h3 { font-size:1rem; font-weight:700; }
+  .report-header p { font-size:.75rem; color:var(--muted); }
+  .ai-output {
+    font-size:.85rem; line-height:1.8; color:var(--text);
+    white-space:pre-wrap;
+  }
+  .ai-loading {
+    display:flex; align-items:center; gap:10px;
+    color:var(--muted); font-size:.85rem; padding:10px 0;
+  }
+  .spinner {
+    width:18px; height:18px; border:2px solid var(--border);
+    border-top-color:var(--accent); border-radius:50%;
+    animation:spin .7s linear infinite; flex-shrink:0;
+  }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .donut-wrap { display:flex; flex-direction:column; gap:8px; margin-top:12px; }
+  .donut-row { display:flex; align-items:center; gap:10px; }
+  .donut-bar { flex:1; height:8px; background:var(--surface2); border-radius:99px; overflow:hidden; }
+  .donut-fill { height:100%; border-radius:99px; }
+  .donut-label { font-size:.78rem; color:var(--muted); width:60px; }
+  .donut-pct { font-size:.78rem; font-weight:600; width:36px; text-align:left; }
+  .btn-analyze {
+    width:100%; padding:13px; background:linear-gradient(135deg,var(--accent),#8b5cf6);
+    border:none; color:#fff; border-radius:12px; font-family:var(--font);
+    font-size:.95rem; font-weight:600; cursor:pointer; margin-top:12px;
+  }
+
+  /* ── BOTTOM NAV ── */
+  .bottom-nav {
+    position:fixed; bottom:0; left:0; right:0;
+    background: rgba(15,17,23,0.95);
+    backdrop-filter:blur(20px);
+    border-top:1px solid var(--border);
+    display:flex; padding: 8px 0 env(safe-area-inset-bottom,8px);
+    z-index:100;
+  }
+  .nav-btn {
+    flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
+    background:none; border:none; color:var(--muted); cursor:pointer;
+    font-family:var(--font); font-size:.65rem; padding:6px 0;
+    transition:.2s;
+  }
+  .nav-btn .icon { font-size:1.3rem; }
+  .nav-btn.active { color:var(--accent); }
+
+  .empty-state {
+    text-align:center; padding:40px 20px; color:var(--muted);
+  }
+  .empty-state .e-icon { font-size:2.5rem; margin-bottom:8px; }
+  .empty-state p { font-size:.85rem; }
+
+  .tag-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .tag { padding:4px 10px; border-radius:99px; font-size:.72rem; font-weight:500; cursor:pointer; border:1px solid var(--border); color:var(--muted); transition:.2s; }
+  .tag.sel { background:var(--accent); color:#fff; border-color:var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>💰 <span>مصروفاتي</span></h1>
+  <div class="month-badge" id="monthBadge">...</div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('home')">الرئيسية</button>
+  <button class="tab" onclick="switchTab('add')">إضافة</button>
+  <button class="tab" onclick="switchTab('commitments')">الالتزامات</button>
+  <button class="tab" onclick="switchTab('report')">التقرير</button>
+</div>
+
+<!-- HOME -->
+<div class="panel active" id="panel-home">
+  <div class="setup-card">
+    <h3>💳 راتبك الشهري</h3>
+    <div class="setup-row">
+      <input class="setup-input" id="salaryInput" type="number" placeholder="0.00" inputmode="decimal">
+      <button class="btn-save" onclick="saveSalary()">حفظ</button>
+    </div>
+  </div>
+
+  <div class="summary-grid">
+    <div class="sum-card">
+      <div class="sum-label">الراتب</div>
+      <div class="sum-value green" id="s-salary">0 ر.س</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-label">إجمالي المصروف</div>
+      <div class="sum-value red" id="s-spent">0 ر.س</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-label">الالتزامات</div>
+      <div class="sum-value yellow" id="s-commits">0 ر.س</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-label">المتبقي</div>
+      <div class="sum-value green" id="s-left">0 ر.س</div>
+    </div>
+    <div class="sum-card full">
+      <div class="sum-label">نسبة المصروف من الراتب</div>
+      <div class="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill" id="prog" style="width:0%"></div></div>
+        <div class="progress-labels"><span id="prog-pct">0%</span><span>100%</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">آخر المصروفات</div>
+  <div id="recentList"></div>
+</div>
+
+<!-- ADD EXPENSE -->
+<div class="panel" id="panel-add">
+  <div class="add-form">
+    <div class="form-title">➕ إضافة مصروف جديد</div>
+
+    <div class="field">
+      <label>اسم المصروف</label>
+      <input id="expName" type="text" placeholder="مثل: قهوة ستاربكس، بنزين، دواء...">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>المبلغ (ر.س)</label>
+        <input id="expAmount" type="number" placeholder="0.00" inputmode="decimal" style="direction:ltr;text-align:right">
+      </div>
+      <div class="field">
+        <label>التاريخ</label>
+        <input id="expDate" type="date">
+      </div>
+    </div>
+    <div class="field">
+      <label>وصف مختصر (اختياري — يساعد الذكاء الاصطناعي)</label>
+      <input id="expDesc" type="text" placeholder="مثل: ما عندي مكنة قهوة بالبيت">
+    </div>
+    <div class="field">
+      <label>الفئة (أو اتركها للذكاء الاصطناعي)</label>
+      <div class="tag-row">
+        <div class="tag" id="tag-auto" onclick="selectTag('auto')">🤖 تلقائي</div>
+        <div class="tag sel" id="tag-ضروري" onclick="selectTag('ضروري')">✅ ضروري</div>
+        <div class="tag" id="tag-كمالي" onclick="selectTag('كمالي')">⚡ كمالي</div>
+        <div class="tag" id="tag-استغنِ" onclick="selectTag('استغنِ')">❌ يمكن الاستغناء</div>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="addExpense()">💾 حفظ المصروف</button>
+  </div>
+</div>
+
+<!-- COMMITMENTS -->
+<div class="panel" id="panel-commitments">
+  <div class="add-form">
+    <div class="form-title">🔗 إضافة التزام شهري</div>
+    <div class="field-row">
+      <div class="field">
+        <label>الاسم</label>
+        <input id="cName" type="text" placeholder="إيجار، قسط، اشتراك...">
+      </div>
+      <div class="field">
+        <label>المبلغ (ر.س)</label>
+        <input id="cAmount" type="number" placeholder="0" inputmode="decimal" style="direction:ltr;text-align:right">
+      </div>
+    </div>
+    <div class="field">
+      <label>الأيقونة</label>
+      <div class="tag-row" id="iconPicker">
+        <span class="tag sel" onclick="selectIcon(this,'🏠')">🏠</span>
+        <span class="tag" onclick="selectIcon(this,'🚗')">🚗</span>
+        <span class="tag" onclick="selectIcon(this,'📱')">📱</span>
+        <span class="tag" onclick="selectIcon(this,'💊')">💊</span>
+        <span class="tag" onclick="selectIcon(this,'🎓')">🎓</span>
+        <span class="tag" onclick="selectIcon(this,'🔌')">🔌</span>
+        <span class="tag" onclick="selectIcon(this,'💧')">💧</span>
+        <span class="tag" onclick="selectIcon(this,'📦')">📦</span>
+        <span class="tag" onclick="selectIcon(this,'💳')">💳</span>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="addCommitment()">إضافة الالتزام</button>
+  </div>
+
+  <div class="section-title">التزاماتي الشهرية</div>
+  <div id="commitList">
+    <div class="empty-state"><div class="e-icon">🔗</div><p>لا توجد التزامات بعد</p></div>
+  </div>
+</div>
+
+<!-- REPORT -->
+<div class="panel" id="panel-report">
+  <div class="report-card">
+    <div class="report-header">
+      <div class="report-icon">📊</div>
+      <div>
+        <h3>توزيع المصروفات</h3>
+        <p>حسب النوع هذا الشهر</p>
+      </div>
+    </div>
+    <div class="donut-wrap" id="donutChart"></div>
+  </div>
+
+  <div class="report-card">
+    <div class="report-header">
+      <div class="report-icon">🤖</div>
+      <div>
+        <h3>تحليل الذكاء الاصطناعي</h3>
+        <p>نصائح وتوصيات شخصية</p>
+      </div>
+    </div>
+    <div id="aiReportOutput">
+      <p style="color:var(--muted);font-size:.85rem">اضغط الزر لتحليل مصروفاتك 👇</p>
+    </div>
+    <button class="btn-analyze" onclick="runAIReport()">🔍 تحليل مصروفاتي</button>
+  </div>
+</div>
+
+<div class="bottom-nav">
+  <button class="nav-btn active" onclick="switchTab('home')" id="nav-home"><span class="icon">🏠</span>الرئيسية</button>
+  <button class="nav-btn" onclick="switchTab('add')" id="nav-add"><span class="icon">➕</span>إضافة</button>
+  <button class="nav-btn" onclick="switchTab('commitments')" id="nav-commitments"><span class="icon">🔗</span>التزامات</button>
+  <button class="nav-btn" onclick="switchTab('report')" id="nav-report"><span class="icon">📊</span>التقرير</button>
+</div>
+
+<script>
+// ── STATE ──
+let state = JSON.parse(localStorage.getItem('masroofati') || '{}');
+if (!state.salary) state.salary = 0;
+if (!state.expenses) state.expenses = [];
+if (!state.commitments) state.commitments = [];
+let selectedTag = 'ضروري';
+let selectedIcon = '🏠';
+
+function save() { localStorage.setItem('masroofati', JSON.stringify(state)); }
+
+// ── INIT ──
+window.onload = () => {
+  const now = new Date();
+  document.getElementById('monthBadge').textContent =
+    now.toLocaleDateString('ar-SA', {month:'long', year:'numeric'});
+  document.getElementById('expDate').value = now.toISOString().slice(0,10);
+  document.getElementById('salaryInput').value = state.salary || '';
+  renderAll();
+};
+
+// ── TABS ──
+function switchTab(t) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+t).classList.add('active');
+  const tabEl = [...document.querySelectorAll('.tab')]
+    .find(b=>b.getAttribute('onclick').includes("'"+t+"'"));
+  if(tabEl) tabEl.classList.add('active');
+  document.getElementById('nav-'+t)?.classList.add('active');
+  if(t==='report') renderDonut();
+}
+
+// ── SALARY ──
+function saveSalary() {
+  const v = parseFloat(document.getElementById('salaryInput').value)||0;
+  state.salary = v;
+  save(); renderAll();
+  document.getElementById('salaryInput').blur();
+}
+
+// ── TAG / ICON ──
+function selectTag(t) {
+  selectedTag = t;
+  ['auto','ضروري','كمالي','استغنِ'].forEach(x=>{
+    document.getElementById('tag-'+x)?.classList.toggle('sel', x===t);
+  });
+}
+function selectIcon(el, icon) {
+  selectedIcon = icon;
+  document.querySelectorAll('#iconPicker .tag').forEach(t=>t.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+// ── ADD EXPENSE ──
+async function addExpense() {
+  const name = document.getElementById('expName').value.trim();
+  const amount = parseFloat(document.getElementById('expAmount').value)||0;
+  const date = document.getElementById('expDate').value;
+  const desc = document.getElementById('expDesc').value.trim();
+  if(!name || !amount) { alert('اكتب الاسم والمبلغ'); return; }
+
+  const exp = {id:Date.now(), name, amount, date, desc, cat: selectedTag==='auto'?null:selectedTag, aiNote:''};
+  state.expenses.unshift(exp);
+  save();
+
+  // Clear
+  document.getElementById('expName').value='';
+  document.getElementById('expAmount').value='';
+  document.getElementById('expDesc').value='';
+  selectTag('ضروري');
+
+  // AI cat if auto
+  if(selectedTag==='auto') {
+    exp.cat = '...';
+    renderAll();
+    const cat = await aiCategorize(name, desc, amount);
+    exp.cat = cat.cat; exp.aiNote = cat.note;
+    save();
+  }
+  renderAll();
+  switchTab('home');
+}
+
+// ── AI CATEGORIZE ──
+async function aiCategorize(name, desc, amount) {
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:200,
+        messages:[{role:'user', content:`صنّف هذا المصروف:
+الاسم: ${name}
+الوصف: ${desc||'لا يوجد'}
+المبلغ: ${amount} ريال
+
+أجب بـ JSON فقط بهذا الشكل بدون أي نص آخر:
+{"cat":"ضروري أو كمالي أو استغنِ","note":"سبب قصير جداً بالعربي"}
+
+ضروري = أساسي للحياة (دواء، كهرباء، إيجار، بنزين عمل)
+كمالي = مفيد لكن ليس أساسياً
+استغنِ = يمكن الاستغناء عنه (قهوة من محل وعنده مكنة، ملابس بلا مناسبة)`}]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.map(c=>c.text||'').join('');
+    const clean = text.replace(/```json|```/g,'').trim();
+    return JSON.parse(clean);
+  } catch(e) { return {cat:'كمالي',note:''}; }
+}
+
+// ── ADD COMMITMENT ──
+function addCommitment() {
+  const name = document.getElementById('cName').value.trim();
+  const amount = parseFloat(document.getElementById('cAmount').value)||0;
+  if(!name||!amount){alert('اكتب الاسم والمبلغ');return;}
+  state.commitments.push({id:Date.now(), name, amount, icon:selectedIcon});
+  save(); renderAll();
+  document.getElementById('cName').value='';
+  document.getElementById('cAmount').value='';
+}
+
+function deleteCommitment(id) {
+  state.commitments = state.commitments.filter(c=>c.id!==id);
+  save(); renderAll();
+}
+
+function deleteExpense(id) {
+  state.expenses = state.expenses.filter(e=>e.id!==id);
+  save(); renderAll();
+}
+
+// ── RENDER ──
+function renderAll() {
+  const totalExp = state.expenses.reduce((a,e)=>a+e.amount,0);
+  const totalCom = state.commitments.reduce((a,c)=>a+c.amount,0);
+  const left = state.salary - totalExp - totalCom;
+  const pct = state.salary ? Math.min(100, ((totalExp+totalCom)/state.salary*100)).toFixed(0) : 0;
+
+  const fmt = n => n.toLocaleString('ar-SA',{maximumFractionDigits:0})+' ر.س';
+  document.getElementById('s-salary').textContent = fmt(state.salary);
+  document.getElementById('s-spent').textContent = fmt(totalExp);
+  document.getElementById('s-commits').textContent = fmt(totalCom);
+  document.getElementById('s-left').textContent = fmt(Math.max(0,left));
+  document.getElementById('s-left').className = 'sum-value '+(left>=0?'green':'red');
+  document.getElementById('prog').style.width = pct+'%';
+  document.getElementById('prog-pct').textContent = pct+'%';
+
+  // recent
+  const rl = document.getElementById('recentList');
+  const recent = state.expenses.slice(0,5);
+  rl.innerHTML = recent.length ? recent.map(expHtml).join('') :
+    '<div class="empty-state"><div class="e-icon">💸</div><p>لا توجد مصروفات بعد</p></div>';
+
+  // commitments
+  const cl = document.getElementById('commitList');
+  cl.innerHTML = state.commitments.length ? state.commitments.map(c=>`
+    <div class="commit-item">
+      <div class="commit-icon">${c.icon}</div>
+      <div class="commit-info">
+        <div class="commit-name">${c.name}</div>
+        <div class="commit-amount">-${c.amount.toLocaleString('ar-SA')} ر.س / شهر</div>
+      </div>
+      <button class="btn-del" onclick="deleteCommitment(${c.id})">🗑</button>
+    </div>`).join('') :
+    '<div class="empty-state"><div class="e-icon">🔗</div><p>لا توجد التزامات بعد</p></div>';
+}
+
+function expHtml(e) {
+  const cats = {'ضروري':'✅','كمالي':'⚡','استغنِ':'❌','التزام':'🔗','...':'⏳'};
+  const emoji = cats[e.cat]||'💰';
+  return `<div class="expense-item">
+    <div class="exp-left">
+      <div class="exp-emoji">${emoji}</div>
+      <div class="cat-badge cat-${e.cat||'كمالي'}">${e.cat||'?'}</div>
+    </div>
+    <div class="exp-body">
+      <div class="exp-name">${e.name}</div>
+      ${e.desc?`<div class="exp-desc">${e.desc}</div>`:''}
+      ${e.aiNote?`<div class="exp-ai">🤖 ${e.aiNote}</div>`:''}
+    </div>
+    <div class="exp-right">
+      <div class="exp-amount">${e.amount.toLocaleString('ar-SA')} ر.س</div>
+      <div class="exp-date">${e.date||''}</div>
+      <button class="btn-del" onclick="deleteExpense(${e.id})" style="display:block;margin-top:4px">🗑</button>
+    </div>
+  </div>`;
+}
+
+function renderDonut() {
+  const cats = ['ضروري','كمالي','استغنِ'];
+  const colors = ['#2dd4bf','#fbbf24','#f87171'];
+  const totals = cats.map(c=>state.expenses.filter(e=>e.cat===c).reduce((a,e)=>a+e.amount,0));
+  const grand = totals.reduce((a,b)=>a+b,1);
+  const commits = state.commitments.reduce((a,c)=>a+c.amount,0);
+
+  const wrap = document.getElementById('donutChart');
+  wrap.innerHTML = [...cats.map((c,i)=>`
+    <div class="donut-row">
+      <div class="donut-label" style="color:${colors[i]}">${['✅ ضروري','⚡ كمالي','❌ استغنِ'][i]}</div>
+      <div class="donut-bar"><div class="donut-fill" style="width:${(totals[i]/grand*100).toFixed(0)}%;background:${colors[i]}"></div></div>
+      <div class="donut-pct" style="color:${colors[i]}">${totals[i].toLocaleString('ar-SA')}</div>
+    </div>`),
+    `<div class="donut-row">
+      <div class="donut-label" style="color:var(--accent)">🔗 التزامات</div>
+      <div class="donut-bar"><div class="donut-fill" style="width:${(commits/grand*100).toFixed(0)}%;background:var(--accent)"></div></div>
+      <div class="donut-pct" style="color:var(--accent)">${commits.toLocaleString('ar-SA')}</div>
+    </div>`].join('');
+}
+
+// ── AI REPORT ──
+async function runAIReport() {
+  const out = document.getElementById('aiReportOutput');
+  out.innerHTML = '<div class="ai-loading"><div class="spinner"></div> الذكاء الاصطناعي يحلل مصروفاتك...</div>';
+
+  const totalExp = state.expenses.reduce((a,e)=>a+e.amount,0);
+  const totalCom = state.commitments.reduce((a,c)=>a+c.amount,0);
+  const wasteItems = state.expenses.filter(e=>e.cat==='استغنِ');
+  const wasteTotal = wasteItems.reduce((a,e)=>a+e.amount,0);
+
+  const prompt = `أنت مستشار مالي شخصي. حلل هذه البيانات المالية وقدم تقريراً واضحاً ومفيداً باللغة العربية:
+
+الراتب الشهري: ${state.salary} ريال
+إجمالي المصروفات: ${totalExp} ريال
+الالتزامات الشهرية: ${totalCom} ريال (${state.commitments.map(c=>`${c.name}: ${c.amount} ر.س`).join(', ')})
+المتبقي: ${state.salary - totalExp - totalCom} ريال
+
+المصروفات التفصيلية:
+${state.expenses.slice(0,20).map(e=>`- ${e.name} (${e.cat}): ${e.amount} ريال${e.desc?' - '+e.desc:''}`).join('\n')}
+
+المصروفات التي يمكن الاستغناء عنها (${wasteTotal} ريال): ${wasteItems.map(e=>e.name).join(', ')||'لا يوجد'}
+
+قدم تقريراً يشمل:
+1. 📊 ملخص سريع للوضع المالي
+2. ⚠️ تحذيرات أو مخاوف إن وجدت
+3. 💡 أهم 3 نصائح عملية لتوفير المال
+4. ✅ جوانب إيجابية في إنفاقه
+5. 🎯 هدف مالي مقترح للشهر القادم
+
+اجعل الرد مختصراً وعملياً وودياً. استخدم الإيموجي.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:800,
+        messages:[{role:'user', content:prompt}]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.map(c=>c.text||'').join('') || 'حدث خطأ';
+    out.innerHTML = `<div class="ai-output">${text}</div>`;
+  } catch(e) {
+    out.innerHTML = '<p style="color:var(--red)">❌ تعذر الاتصال، تأكد من اتصال الإنترنت</p>';
+  }
+}
+
+renderAll();
+</script>
+</body>
+</html>
