@@ -9,6 +9,7 @@
 <meta name="theme-color" content="#0f1117">
 <title>ظ…طµط±ظˆظپط§طھظٹ</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -23,7 +24,7 @@
     --red: #f87171;
     --text: #e8eaf0;
     --muted: #7b7f94;
-    --font: 'IBM Plex Sans Arabic', sans-serif;
+    --font: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, Arial, sans-serif;
   }
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   body {
@@ -62,6 +63,632 @@
     border:none; background:none; color:var(--muted);
     font-family:var(--font); font-size:.85rem; font-weight:500;
     border-radius:10px; cursor:pointer; transition:.2s;
+  }
+  .tab.active { background: var(--accent); color:#fff; }
+
+  /* â”€â”€ PANELS â”€â”€ */
+  .panel { display:none; padding:0 16px 100px; }
+  .panel.active { display:block; }
+
+  /* â”€â”€ SUMMARY CARDS â”€â”€ */
+  .summary-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+  .sum-card {
+    background: var(--surface); border-radius:16px; padding:16px;
+    border: 1px solid var(--border);
+  }
+  .sum-card.full { grid-column:1/-1; }
+  .sum-label { font-size:.72rem; color:var(--muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:.5px; }
+  .sum-value { font-size:1.4rem; font-weight:700; }
+  .sum-value.green { color: var(--green); }
+  .sum-value.red { color: var(--red); }
+  .sum-value.yellow { color: var(--yellow); }
+
+  /* progress bar */
+  .progress-wrap { margin-top:10px; }
+  .progress-bar {
+    height:6px; background: var(--surface2); border-radius:99px; overflow:hidden;
+  }
+  .progress-fill {
+    height:100%; border-radius:99px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width .5s ease;
+  }
+  .progress-labels { display:flex; justify-content:space-between; font-size:.7rem; color:var(--muted); margin-top:5px; }
+
+  /* â”€â”€ SALARY SETUP â”€â”€ */
+  .setup-card {
+    background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%);
+    border-radius:18px; padding:20px; margin-bottom:16px;
+    position:relative; overflow:hidden;
+  }
+  .setup-card::after {
+    content:''; position:absolute; top:-30px; right:-30px;
+    width:100px; height:100px; border-radius:50%;
+    background: rgba(255,255,255,0.08);
+  }
+  .setup-card h3 { font-size:.9rem; margin-bottom:12px; opacity:.9; }
+  .setup-row { display:flex; flex-direction:column; gap:10px; }
+  .setup-input {
+    width:100%; background: rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.2);
+    color:#fff; padding:12px 16px; border-radius:12px;
+    font-family:var(--font); font-size:1.1rem; outline:none;
+    direction:ltr; text-align:right;
+  }
+  .setup-input::placeholder { color:rgba(255,255,255,0.4); }
+  .btn-save {
+    width:100%; background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.35);
+    color:#fff; padding:12px; border-radius:12px; font-family:var(--font);
+    font-size:1rem; font-weight:600; cursor:pointer; letter-spacing:.3px;
+    transition:.2s;
+  }
+  .btn-save:active { background: rgba(255,255,255,0.35); }
+
+  /* â”€â”€ COMMITMENTS â”€â”€ */
+  .section-title {
+    font-size:.8rem; font-weight:600; color:var(--muted);
+    text-transform:uppercase; letter-spacing:.6px;
+    margin-bottom:10px; margin-top:20px;
+  }
+  .commit-item {
+    background: var(--surface); border-radius:14px; padding:14px 16px;
+    display:flex; align-items:center; gap:12px; margin-bottom:8px;
+    border: 1px solid var(--border);
+  }
+  .commit-icon { font-size:1.4rem; width:36px; text-align:center; flex-shrink:0; }
+  .commit-info { flex:1; }
+  .commit-name { font-size:.9rem; font-weight:500; }
+  .commit-amount { font-size:.8rem; color:var(--red); margin-top:2px; }
+  .btn-del {
+    background:none; border:none; color:var(--muted); font-size:1.1rem;
+    cursor:pointer; padding:4px;
+  }
+
+  /* â”€â”€ ADD FORM â”€â”€ */
+  .add-form {
+    background: var(--surface); border-radius:18px; padding:18px;
+    border:1px solid var(--border); margin-bottom:12px;
+  }
+  .form-title { font-size:.95rem; font-weight:600; margin-bottom:14px; }
+  .field { margin-bottom:12px; }
+  .field label { font-size:.78rem; color:var(--muted); display:block; margin-bottom:6px; }
+  .field input, .field select, .field textarea {
+    width:100%; background: var(--surface2); border:1px solid var(--border);
+    color:var(--text); padding:10px 14px; border-radius:10px;
+    font-family:var(--font); font-size:.9rem; outline:none;
+    transition:.2s;
+  }
+  .field input:focus, .field select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(108,99,255,.15);
+  }
+  .field select option { background: var(--surface2); }
+  .field-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .btn-primary {
+    width:100%; background: var(--accent); border:none; color:#fff;
+    padding:13px; border-radius:12px; font-family:var(--font);
+    font-size:.95rem; font-weight:600; cursor:pointer;
+    transition:.2s; letter-spacing:.2px;
+  }
+  .btn-primary:active { transform:scale(.98); }
+
+  /* â”€â”€ EXPENSE LIST â”€â”€ */
+  .expense-item {
+    background: var(--surface); border-radius:14px; padding:14px 16px;
+    display:flex; align-items:flex-start; gap:12px; margin-bottom:8px;
+    border: 1px solid var(--border); animation: slideIn .25s ease;
+    position:relative; overflow:hidden;
+  }
+  @keyframes slideIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+  .exp-left { display:flex; flex-direction:column; align-items:center; gap:4px; flex-shrink:0; }
+  .exp-emoji { font-size:1.5rem; }
+  .cat-badge {
+    font-size:.6rem; padding:2px 7px; border-radius:99px; font-weight:600;
+    white-space:nowrap; letter-spacing:.3px;
+  }
+  .cat-ط¶ط±ظˆط±ظٹ { background:rgba(45,212,191,.15); color:var(--green); }
+  .cat-ظƒظ…ط§ظ„ظٹ { background:rgba(251,191,36,.12); color:var(--yellow); }
+  .cat-ط§ط³طھط؛ظ†ظگ { background:rgba(248,113,113,.12); color:var(--red); }
+  .cat-ط§ظ„طھط²ط§ظ… { background:rgba(108,99,255,.15); color:var(--accent); }
+  .exp-body { flex:1; min-width:0; }
+  .exp-name { font-size:.9rem; font-weight:500; }
+  .exp-desc { font-size:.75rem; color:var(--muted); margin-top:2px; line-height:1.4; }
+  .exp-ai { font-size:.72rem; color:var(--accent); margin-top:5px; font-style:italic; }
+  .exp-right { text-align:left; flex-shrink:0; }
+  .exp-amount { font-size:1rem; font-weight:700; color:var(--red); }
+  .exp-date { font-size:.68rem; color:var(--muted); margin-top:2px; }
+
+  /* â”€â”€ AI REPORT â”€â”€ */
+  .report-card {
+    background: var(--surface); border-radius:18px; padding:20px;
+    border:1px solid var(--border); margin-bottom:12px;
+  }
+  .report-header { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+  .report-icon { font-size:1.6rem; }
+  .report-header h3 { font-size:1rem; font-weight:700; }
+  .report-header p { font-size:.75rem; color:var(--muted); }
+  .ai-output {
+    font-size:.85rem; line-height:1.8; color:var(--text);
+    white-space:pre-wrap;
+  }
+  .ai-loading {
+    display:flex; align-items:center; gap:10px;
+    color:var(--muted); font-size:.85rem; padding:10px 0;
+  }
+  .spinner {
+    width:18px; height:18px; border:2px solid var(--border);
+    border-top-color:var(--accent); border-radius:50%;
+    animation:spin .7s linear infinite; flex-shrink:0;
+  }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .donut-wrap { display:flex; flex-direction:column; gap:8px; margin-top:12px; }
+  .donut-row { display:flex; align-items:center; gap:10px; }
+  .donut-bar { flex:1; height:8px; background:var(--surface2); border-radius:99px; overflow:hidden; }
+  .donut-fill { height:100%; border-radius:99px; }
+  .donut-label { font-size:.78rem; color:var(--muted); width:60px; }
+  .donut-pct { font-size:.78rem; font-weight:600; width:36px; text-align:left; }
+  .btn-analyze {
+    width:100%; padding:13px; background:linear-gradient(135deg,var(--accent),#8b5cf6);
+    border:none; color:#fff; border-radius:12px; font-family:var(--font);
+    font-size:.95rem; font-weight:600; cursor:pointer; margin-top:12px;
+  }
+
+  /* â”€â”€ BOTTOM NAV â”€â”€ */
+  .bottom-nav {
+    position:fixed; bottom:0; left:0; right:0;
+    background: rgba(15,17,23,0.95);
+    backdrop-filter:blur(20px);
+    border-top:1px solid var(--border);
+    display:flex; padding: 8px 0 env(safe-area-inset-bottom,8px);
+    z-index:100;
+  }
+  .nav-btn {
+    flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
+    background:none; border:none; color:var(--muted); cursor:pointer;
+    font-family:var(--font); font-size:.65rem; padding:6px 0;
+    transition:.2s;
+  }
+  .nav-btn .icon { font-size:1.3rem; }
+  .nav-btn.active { color:var(--accent); }
+
+  .empty-state {
+    text-align:center; padding:40px 20px; color:var(--muted);
+  }
+  .empty-state .e-icon { font-size:2.5rem; margin-bottom:8px; }
+  .empty-state p { font-size:.85rem; }
+
+  .tag-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .tag { padding:4px 10px; border-radius:99px; font-size:.72rem; font-weight:500; cursor:pointer; border:1px solid var(--border); color:var(--muted); transition:.2s; }
+  .tag.sel { background:var(--accent); color:#fff; border-color:var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>ًں’° <span>ظ…طµط±ظˆظپط§طھظٹ</span></h1>
+  <div class="month-badge" id="monthBadge">...</div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('home')">ط§ظ„ط±ط¦ظٹط³ظٹط©</button>
+  <button class="tab" onclick="switchTab('add')">ط¥ط¶ط§ظپط©</button>
+  <button class="tab" onclick="switchTab('commitments')">ط§ظ„ط§ظ„طھط²ط§ظ…ط§طھ</button>
+  <button class="tab" onclick="switchTab('report')">ط§ظ„طھظ‚ط±ظٹط±</button>
+</div>
+
+<!-- HOME -->
+<div class="panel active" id="panel-home">
+  <div class="setup-card">
+    <h3>ًں’³ ط±ط§طھط¨ظƒ ط§ظ„ط´ظ‡ط±ظٹ</h3>
+    <div class="setup-row">
+      <input class="setup-input" id="salaryInput" type="number" placeholder="0.00" inputmode="decimal" onkeydown="if(event.key==='Enter'){saveSalary()}">
+      <button class="btn-save" onclick="saveSalary()">ط­ظپط¸</button>
+    </div>
+  </div>
+
+  <div class="summary-grid">
+    <div class="sum-card">
+      <div class="sum-label">ط§ظ„ط±ط§طھط¨</div>
+      <div class="sum-value green" id="s-salary">0 ط±.ط³</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-label">ط¥ط¬ظ…ط§ظ„ظٹ ط§ظ„ظ…طµط±ظˆظپ</div>
+      <div class="sum-value red" id="s-spent">0 ط±.ط³</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-label">ط§ظ„ط§ظ„طھط²ط§ظ…ط§طھ</div>
+      <div class="sum-value yellow" id="s-commits">0 ط±.ط³</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-label">ط§ظ„ظ…طھط¨ظ‚ظٹ</div>
+      <div class="sum-value green" id="s-left">0 ط±.ط³</div>
+    </div>
+    <div class="sum-card full">
+      <div class="sum-label">ظ†ط³ط¨ط© ط§ظ„ظ…طµط±ظˆظپ ظ…ظ† ط§ظ„ط±ط§طھط¨</div>
+      <div class="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill" id="prog" style="width:0%"></div></div>
+        <div class="progress-labels"><span id="prog-pct">0%</span><span>100%</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">ط¢ط®ط± ط§ظ„ظ…طµط±ظˆظپط§طھ</div>
+  <div id="recentList"></div>
+</div>
+
+<!-- ADD EXPENSE -->
+<div class="panel" id="panel-add">
+  <div class="add-form">
+    <div class="form-title">â‍• ط¥ط¶ط§ظپط© ظ…طµط±ظˆظپ ط¬ط¯ظٹط¯</div>
+
+    <div class="field">
+      <label>ط§ط³ظ… ط§ظ„ظ…طµط±ظˆظپ</label>
+      <input id="expName" type="text" placeholder="ظ…ط«ظ„: ظ‚ظ‡ظˆط© ط³طھط§ط±ط¨ظƒط³طŒ ط¨ظ†ط²ظٹظ†طŒ ط¯ظˆط§ط،...">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>ط§ظ„ظ…ط¨ظ„ط؛ (ط±.ط³)</label>
+        <input id="expAmount" type="number" placeholder="0.00" inputmode="decimal" style="direction:ltr;text-align:right">
+      </div>
+      <div class="field">
+        <label>ط§ظ„طھط§ط±ظٹط®</label>
+        <input id="expDate" type="date">
+      </div>
+    </div>
+    <div class="field">
+      <label>ظˆطµظپ ظ…ط®طھطµط± (ط§ط®طھظٹط§ط±ظٹ â€” ظٹط³ط§ط¹ط¯ ط§ظ„ط°ظƒط§ط، ط§ظ„ط§طµط·ظ†ط§ط¹ظٹ)</label>
+      <input id="expDesc" type="text" placeholder="ظ…ط«ظ„: ظ…ط§ ط¹ظ†ط¯ظٹ ظ…ظƒظ†ط© ظ‚ظ‡ظˆط© ط¨ط§ظ„ط¨ظٹطھ">
+    </div>
+    <div class="field">
+      <label>ط§ظ„ظپط¦ط© (ط£ظˆ ط§طھط±ظƒظ‡ط§ ظ„ظ„ط°ظƒط§ط، ط§ظ„ط§طµط·ظ†ط§ط¹ظٹ)</label>
+      <div class="tag-row">
+        <div class="tag" id="tag-auto" onclick="selectTag('auto')">ًں¤– طھظ„ظ‚ط§ط¦ظٹ</div>
+        <div class="tag sel" id="tag-ط¶ط±ظˆط±ظٹ" onclick="selectTag('ط¶ط±ظˆط±ظٹ')">âœ… ط¶ط±ظˆط±ظٹ</div>
+        <div class="tag" id="tag-ظƒظ…ط§ظ„ظٹ" onclick="selectTag('ظƒظ…ط§ظ„ظٹ')">âڑ، ظƒظ…ط§ظ„ظٹ</div>
+        <div class="tag" id="tag-ط§ط³طھط؛ظ†ظگ" onclick="selectTag('ط§ط³طھط؛ظ†ظگ')">â‌Œ ظٹظ…ظƒظ† ط§ظ„ط§ط³طھط؛ظ†ط§ط،</div>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="addExpense()">ًں’¾ ط­ظپط¸ ط§ظ„ظ…طµط±ظˆظپ</button>
+  </div>
+</div>
+
+<!-- COMMITMENTS -->
+<div class="panel" id="panel-commitments">
+  <div class="add-form">
+    <div class="form-title">ًں”— ط¥ط¶ط§ظپط© ط§ظ„طھط²ط§ظ… ط´ظ‡ط±ظٹ</div>
+    <div class="field-row">
+      <div class="field">
+        <label>ط§ظ„ط§ط³ظ…</label>
+        <input id="cName" type="text" placeholder="ط¥ظٹط¬ط§ط±طŒ ظ‚ط³ط·طŒ ط§ط´طھط±ط§ظƒ...">
+      </div>
+      <div class="field">
+        <label>ط§ظ„ظ…ط¨ظ„ط؛ (ط±.ط³)</label>
+        <input id="cAmount" type="number" placeholder="0" inputmode="decimal" style="direction:ltr;text-align:right">
+      </div>
+    </div>
+    <div class="field">
+      <label>ط§ظ„ط£ظٹظ‚ظˆظ†ط©</label>
+      <div class="tag-row" id="iconPicker">
+        <span class="tag sel" onclick="selectIcon(this,'ًںڈ ')">ًںڈ </span>
+        <span class="tag" onclick="selectIcon(this,'ًںڑ—')">ًںڑ—</span>
+        <span class="tag" onclick="selectIcon(this,'ًں“±')">ًں“±</span>
+        <span class="tag" onclick="selectIcon(this,'ًں’ٹ')">ًں’ٹ</span>
+        <span class="tag" onclick="selectIcon(this,'ًںژ“')">ًںژ“</span>
+        <span class="tag" onclick="selectIcon(this,'ًں”Œ')">ًں”Œ</span>
+        <span class="tag" onclick="selectIcon(this,'ًں’§')">ًں’§</span>
+        <span class="tag" onclick="selectIcon(this,'ًں“¦')">ًں“¦</span>
+        <span class="tag" onclick="selectIcon(this,'ًں’³')">ًں’³</span>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="addCommitment()">ط¥ط¶ط§ظپط© ط§ظ„ط§ظ„طھط²ط§ظ…</button>
+  </div>
+
+  <div class="section-title">ط§ظ„طھط²ط§ظ…ط§طھظٹ ط§ظ„ط´ظ‡ط±ظٹط©</div>
+  <div id="commitList">
+    <div class="empty-state"><div class="e-icon">ًں”—</div><p>ظ„ط§ طھظˆط¬ط¯ ط§ظ„طھط²ط§ظ…ط§طھ ط¨ط¹ط¯</p></div>
+  </div>
+</div>
+
+<!-- REPORT -->
+<div class="panel" id="panel-report">
+  <div class="report-card">
+    <div class="report-header">
+      <div class="report-icon">ًں“ٹ</div>
+      <div>
+        <h3>طھظˆط²ظٹط¹ ط§ظ„ظ…طµط±ظˆظپط§طھ</h3>
+        <p>ط­ط³ط¨ ط§ظ„ظ†ظˆط¹ ظ‡ط°ط§ ط§ظ„ط´ظ‡ط±</p>
+      </div>
+    </div>
+    <div class="donut-wrap" id="donutChart"></div>
+  </div>
+
+  <div class="report-card">
+    <div class="report-header">
+      <div class="report-icon">ًں¤–</div>
+      <div>
+        <h3>طھط­ظ„ظٹظ„ ط§ظ„ط°ظƒط§ط، ط§ظ„ط§طµط·ظ†ط§ط¹ظٹ</h3>
+        <p>ظ†طµط§ط¦ط­ ظˆطھظˆطµظٹط§طھ ط´ط®طµظٹط©</p>
+      </div>
+    </div>
+    <div id="aiReportOutput">
+      <p style="color:var(--muted);font-size:.85rem">ط§ط¶ط؛ط· ط§ظ„ط²ط± ظ„طھط­ظ„ظٹظ„ ظ…طµط±ظˆظپط§طھظƒ ًں‘‡</p>
+    </div>
+    <button class="btn-analyze" onclick="runAIReport()">ًں”چ طھط­ظ„ظٹظ„ ظ…طµط±ظˆظپط§طھظٹ</button>
+  </div>
+</div>
+
+<div class="bottom-nav">
+  <button class="nav-btn active" onclick="switchTab('home')" id="nav-home"><span class="icon">ًںڈ </span>ط§ظ„ط±ط¦ظٹط³ظٹط©</button>
+  <button class="nav-btn" onclick="switchTab('add')" id="nav-add"><span class="icon">â‍•</span>ط¥ط¶ط§ظپط©</button>
+  <button class="nav-btn" onclick="switchTab('commitments')" id="nav-commitments"><span class="icon">ًں”—</span>ط§ظ„طھط²ط§ظ…ط§طھ</button>
+  <button class="nav-btn" onclick="switchTab('report')" id="nav-report"><span class="icon">ًں“ٹ</span>ط§ظ„طھظ‚ط±ظٹط±</button>
+</div>
+
+<script>
+// â”€â”€ STATE â”€â”€
+let state = JSON.parse(localStorage.getItem('masroofati') || '{}');
+if (!state.salary) state.salary = 0;
+if (!state.expenses) state.expenses = [];
+if (!state.commitments) state.commitments = [];
+let selectedTag = 'ط¶ط±ظˆط±ظٹ';
+let selectedIcon = 'ًںڈ ';
+
+function save() { localStorage.setItem('masroofati', JSON.stringify(state)); }
+
+// â”€â”€ INIT â”€â”€
+window.onload = () => {
+  const now = new Date();
+  document.getElementById('monthBadge').textContent =
+    now.toLocaleDateString('ar-SA', {month:'long', year:'numeric'});
+  document.getElementById('expDate').value = now.toISOString().slice(0,10);
+  document.getElementById('salaryInput').value = state.salary || '';
+  renderAll();
+};
+
+// â”€â”€ TABS â”€â”€
+function switchTab(t) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+t).classList.add('active');
+  const tabEl = [...document.querySelectorAll('.tab')]
+    .find(b=>b.getAttribute('onclick').includes("'"+t+"'"));
+  if(tabEl) tabEl.classList.add('active');
+  document.getElementById('nav-'+t)?.classList.add('active');
+  if(t==='report') renderDonut();
+}
+
+// â”€â”€ SALARY â”€â”€
+function saveSalary() {
+  const v = parseFloat(document.getElementById('salaryInput').value)||0;
+  state.salary = v;
+  save(); renderAll();
+  document.getElementById('salaryInput').blur();
+}
+
+// â”€â”€ TAG / ICON â”€â”€
+function selectTag(t) {
+  selectedTag = t;
+  ['auto','ط¶ط±ظˆط±ظٹ','ظƒظ…ط§ظ„ظٹ','ط§ط³طھط؛ظ†ظگ'].forEach(x=>{
+    document.getElementById('tag-'+x)?.classList.toggle('sel', x===t);
+  });
+}
+function selectIcon(el, icon) {
+  selectedIcon = icon;
+  document.querySelectorAll('#iconPicker .tag').forEach(t=>t.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+// â”€â”€ ADD EXPENSE â”€â”€
+async function addExpense() {
+  const name = document.getElementById('expName').value.trim();
+  const amount = parseFloat(document.getElementById('expAmount').value)||0;
+  const date = document.getElementById('expDate').value;
+  const desc = document.getElementById('expDesc').value.trim();
+  if(!name || !amount) { alert('ط§ظƒطھط¨ ط§ظ„ط§ط³ظ… ظˆط§ظ„ظ…ط¨ظ„ط؛'); return; }
+
+  const exp = {id:Date.now(), name, amount, date, desc, cat: selectedTag==='auto'?null:selectedTag, aiNote:''};
+  state.expenses.unshift(exp);
+  save();
+
+  // Clear
+  document.getElementById('expName').value='';
+  document.getElementById('expAmount').value='';
+  document.getElementById('expDesc').value='';
+  selectTag('ط¶ط±ظˆط±ظٹ');
+
+  // AI cat if auto
+  if(selectedTag==='auto') {
+    exp.cat = '...';
+    renderAll();
+    const cat = await aiCategorize(name, desc, amount);
+    exp.cat = cat.cat; exp.aiNote = cat.note;
+    save();
+  }
+  renderAll();
+  switchTab('home');
+}
+
+// â”€â”€ AI CATEGORIZE â”€â”€
+async function aiCategorize(name, desc, amount) {
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:200,
+        messages:[{role:'user', content:`طµظ†ظ‘ظپ ظ‡ط°ط§ ط§ظ„ظ…طµط±ظˆظپ:
+ط§ظ„ط§ط³ظ…: ${name}
+ط§ظ„ظˆطµظپ: ${desc||'ظ„ط§ ظٹظˆط¬ط¯'}
+ط§ظ„ظ…ط¨ظ„ط؛: ${amount} ط±ظٹط§ظ„
+
+ط£ط¬ط¨ ط¨ظ€ JSON ظپظ‚ط· ط¨ظ‡ط°ط§ ط§ظ„ط´ظƒظ„ ط¨ط¯ظˆظ† ط£ظٹ ظ†طµ ط¢ط®ط±:
+{"cat":"ط¶ط±ظˆط±ظٹ ط£ظˆ ظƒظ…ط§ظ„ظٹ ط£ظˆ ط§ط³طھط؛ظ†ظگ","note":"ط³ط¨ط¨ ظ‚طµظٹط± ط¬ط¯ط§ظ‹ ط¨ط§ظ„ط¹ط±ط¨ظٹ"}
+
+ط¶ط±ظˆط±ظٹ = ط£ط³ط§ط³ظٹ ظ„ظ„ط­ظٹط§ط© (ط¯ظˆط§ط،طŒ ظƒظ‡ط±ط¨ط§ط،طŒ ط¥ظٹط¬ط§ط±طŒ ط¨ظ†ط²ظٹظ† ط¹ظ…ظ„)
+ظƒظ…ط§ظ„ظٹ = ظ…ظپظٹط¯ ظ„ظƒظ† ظ„ظٹط³ ط£ط³ط§ط³ظٹط§ظ‹
+ط§ط³طھط؛ظ†ظگ = ظٹظ…ظƒظ† ط§ظ„ط§ط³طھط؛ظ†ط§ط، ط¹ظ†ظ‡ (ظ‚ظ‡ظˆط© ظ…ظ† ظ…ط­ظ„ ظˆط¹ظ†ط¯ظ‡ ظ…ظƒظ†ط©طŒ ظ…ظ„ط§ط¨ط³ ط¨ظ„ط§ ظ…ظ†ط§ط³ط¨ط©)`}]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.map(c=>c.text||'').join('');
+    const clean = text.replace(/```json|```/g,'').trim();
+    return JSON.parse(clean);
+  } catch(e) { return {cat:'ظƒظ…ط§ظ„ظٹ',note:''}; }
+}
+
+// â”€â”€ ADD COMMITMENT â”€â”€
+function addCommitment() {
+  const name = document.getElementById('cName').value.trim();
+  const amount = parseFloat(document.getElementById('cAmount').value)||0;
+  if(!name||!amount){alert('ط§ظƒطھط¨ ط§ظ„ط§ط³ظ… ظˆط§ظ„ظ…ط¨ظ„ط؛');return;}
+  state.commitments.push({id:Date.now(), name, amount, icon:selectedIcon});
+  save(); renderAll();
+  document.getElementById('cName').value='';
+  document.getElementById('cAmount').value='';
+}
+
+function deleteCommitment(id) {
+  state.commitments = state.commitments.filter(c=>c.id!==id);
+  save(); renderAll();
+}
+
+function deleteExpense(id) {
+  state.expenses = state.expenses.filter(e=>e.id!==id);
+  save(); renderAll();
+}
+
+// â”€â”€ RENDER â”€â”€
+function renderAll() {
+  const totalExp = state.expenses.reduce((a,e)=>a+e.amount,0);
+  const totalCom = state.commitments.reduce((a,c)=>a+c.amount,0);
+  const left = state.salary - totalExp - totalCom;
+  const pct = state.salary ? Math.min(100, ((totalExp+totalCom)/state.salary*100)).toFixed(0) : 0;
+
+  const fmt = n => n.toLocaleString('ar-SA',{maximumFractionDigits:0})+' ط±.ط³';
+  document.getElementById('s-salary').textContent = fmt(state.salary);
+  document.getElementById('s-spent').textContent = fmt(totalExp);
+  document.getElementById('s-commits').textContent = fmt(totalCom);
+  document.getElementById('s-left').textContent = fmt(Math.max(0,left));
+  document.getElementById('s-left').className = 'sum-value '+(left>=0?'green':'red');
+  document.getElementById('prog').style.width = pct+'%';
+  document.getElementById('prog-pct').textContent = pct+'%';
+
+  // recent
+  const rl = document.getElementById('recentList');
+  const recent = state.expenses.slice(0,5);
+  rl.innerHTML = recent.length ? recent.map(expHtml).join('') :
+    '<div class="empty-state"><div class="e-icon">ًں’¸</div><p>ظ„ط§ طھظˆط¬ط¯ ظ…طµط±ظˆظپط§طھ ط¨ط¹ط¯</p></div>';
+
+  // commitments
+  const cl = document.getElementById('commitList');
+  cl.innerHTML = state.commitments.length ? state.commitments.map(c=>`
+    <div class="commit-item">
+      <div class="commit-icon">${c.icon}</div>
+      <div class="commit-info">
+        <div class="commit-name">${c.name}</div>
+        <div class="commit-amount">-${c.amount.toLocaleString('ar-SA')} ط±.ط³ / ط´ظ‡ط±</div>
+      </div>
+      <button class="btn-del" onclick="deleteCommitment(${c.id})">ًں—‘</button>
+    </div>`).join('') :
+    '<div class="empty-state"><div class="e-icon">ًں”—</div><p>ظ„ط§ طھظˆط¬ط¯ ط§ظ„طھط²ط§ظ…ط§طھ ط¨ط¹ط¯</p></div>';
+}
+
+function expHtml(e) {
+  const cats = {'ط¶ط±ظˆط±ظٹ':'âœ…','ظƒظ…ط§ظ„ظٹ':'âڑ،','ط§ط³طھط؛ظ†ظگ':'â‌Œ','ط§ظ„طھط²ط§ظ…':'ًں”—','...':'âڈ³'};
+  const emoji = cats[e.cat]||'ًں’°';
+  return `<div class="expense-item">
+    <div class="exp-left">
+      <div class="exp-emoji">${emoji}</div>
+      <div class="cat-badge cat-${e.cat||'ظƒظ…ط§ظ„ظٹ'}">${e.cat||'?'}</div>
+    </div>
+    <div class="exp-body">
+      <div class="exp-name">${e.name}</div>
+      ${e.desc?`<div class="exp-desc">${e.desc}</div>`:''}
+      ${e.aiNote?`<div class="exp-ai">ًں¤– ${e.aiNote}</div>`:''}
+    </div>
+    <div class="exp-right">
+      <div class="exp-amount">${e.amount.toLocaleString('ar-SA')} ط±.ط³</div>
+      <div class="exp-date">${e.date||''}</div>
+      <button class="btn-del" onclick="deleteExpense(${e.id})" style="display:block;margin-top:4px">ًں—‘</button>
+    </div>
+  </div>`;
+}
+
+function renderDonut() {
+  const cats = ['ط¶ط±ظˆط±ظٹ','ظƒظ…ط§ظ„ظٹ','ط§ط³طھط؛ظ†ظگ'];
+  const colors = ['#2dd4bf','#fbbf24','#f87171'];
+  const totals = cats.map(c=>state.expenses.filter(e=>e.cat===c).reduce((a,e)=>a+e.amount,0));
+  const grand = totals.reduce((a,b)=>a+b,1);
+  const commits = state.commitments.reduce((a,c)=>a+c.amount,0);
+
+  const wrap = document.getElementById('donutChart');
+  wrap.innerHTML = [...cats.map((c,i)=>`
+    <div class="donut-row">
+      <div class="donut-label" style="color:${colors[i]}">${['âœ… ط¶ط±ظˆط±ظٹ','âڑ، ظƒظ…ط§ظ„ظٹ','â‌Œ ط§ط³طھط؛ظ†ظگ'][i]}</div>
+      <div class="donut-bar"><div class="donut-fill" style="width:${(totals[i]/grand*100).toFixed(0)}%;background:${colors[i]}"></div></div>
+      <div class="donut-pct" style="color:${colors[i]}">${totals[i].toLocaleString('ar-SA')}</div>
+    </div>`),
+    `<div class="donut-row">
+      <div class="donut-label" style="color:var(--accent)">ًں”— ط§ظ„طھط²ط§ظ…ط§طھ</div>
+      <div class="donut-bar"><div class="donut-fill" style="width:${(commits/grand*100).toFixed(0)}%;background:var(--accent)"></div></div>
+      <div class="donut-pct" style="color:var(--accent)">${commits.toLocaleString('ar-SA')}</div>
+    </div>`].join('');
+}
+
+// â”€â”€ AI REPORT â”€â”€
+async function runAIReport() {
+  const out = document.getElementById('aiReportOutput');
+  out.innerHTML = '<div class="ai-loading"><div class="spinner"></div> ط§ظ„ط°ظƒط§ط، ط§ظ„ط§طµط·ظ†ط§ط¹ظٹ ظٹط­ظ„ظ„ ظ…طµط±ظˆظپط§طھظƒ...</div>';
+
+  const totalExp = state.expenses.reduce((a,e)=>a+e.amount,0);
+  const totalCom = state.commitments.reduce((a,c)=>a+c.amount,0);
+  const wasteItems = state.expenses.filter(e=>e.cat==='ط§ط³طھط؛ظ†ظگ');
+  const wasteTotal = wasteItems.reduce((a,e)=>a+e.amount,0);
+
+  const prompt = `ط£ظ†طھ ظ…ط³طھط´ط§ط± ظ…ط§ظ„ظٹ ط´ط®طµظٹ. ط­ظ„ظ„ ظ‡ط°ظ‡ ط§ظ„ط¨ظٹط§ظ†ط§طھ ط§ظ„ظ…ط§ظ„ظٹط© ظˆظ‚ط¯ظ… طھظ‚ط±ظٹط±ط§ظ‹ ظˆط§ط¶ط­ط§ظ‹ ظˆظ…ظپظٹط¯ط§ظ‹ ط¨ط§ظ„ظ„ط؛ط© ط§ظ„ط¹ط±ط¨ظٹط©:
+
+ط§ظ„ط±ط§طھط¨ ط§ظ„ط´ظ‡ط±ظٹ: ${state.salary} ط±ظٹط§ظ„
+ط¥ط¬ظ…ط§ظ„ظٹ ط§ظ„ظ…طµط±ظˆظپط§طھ: ${totalExp} ط±ظٹط§ظ„
+ط§ظ„ط§ظ„طھط²ط§ظ…ط§طھ ط§ظ„ط´ظ‡ط±ظٹط©: ${totalCom} ط±ظٹط§ظ„ (${state.commitments.map(c=>`${c.name}: ${c.amount} ط±.ط³`).join(', ')})
+ط§ظ„ظ…طھط¨ظ‚ظٹ: ${state.salary - totalExp - totalCom} ط±ظٹط§ظ„
+
+ط§ظ„ظ…طµط±ظˆظپط§طھ ط§ظ„طھظپطµظٹظ„ظٹط©:
+${state.expenses.slice(0,20).map(e=>`- ${e.name} (${e.cat}): ${e.amount} ط±ظٹط§ظ„${e.desc?' - '+e.desc:''}`).join('\n')}
+
+ط§ظ„ظ…طµط±ظˆظپط§طھ ط§ظ„طھظٹ ظٹظ…ظƒظ† ط§ظ„ط§ط³طھط؛ظ†ط§ط، ط¹ظ†ظ‡ط§ (${wasteTotal} ط±ظٹط§ظ„): ${wasteItems.map(e=>e.name).join(', ')||'ظ„ط§ ظٹظˆط¬ط¯'}
+
+ظ‚ط¯ظ… طھظ‚ط±ظٹط±ط§ظ‹ ظٹط´ظ…ظ„:
+1. ًں“ٹ ظ…ظ„ط®طµ ط³ط±ظٹط¹ ظ„ظ„ظˆط¶ط¹ ط§ظ„ظ…ط§ظ„ظٹ
+2. âڑ ï¸ڈ طھط­ط°ظٹط±ط§طھ ط£ظˆ ظ…ط®ط§ظˆظپ ط¥ظ† ظˆط¬ط¯طھ
+3. ًں’، ط£ظ‡ظ… 3 ظ†طµط§ط¦ط­ ط¹ظ…ظ„ظٹط© ظ„طھظˆظپظٹط± ط§ظ„ظ…ط§ظ„
+4. âœ… ط¬ظˆط§ظ†ط¨ ط¥ظٹط¬ط§ط¨ظٹط© ظپظٹ ط¥ظ†ظپط§ظ‚ظ‡
+5. ًںژ¯ ظ‡ط¯ظپ ظ…ط§ظ„ظٹ ظ…ظ‚طھط±ط­ ظ„ظ„ط´ظ‡ط± ط§ظ„ظ‚ط§ط¯ظ…
+
+ط§ط¬ط¹ظ„ ط§ظ„ط±ط¯ ظ…ط®طھطµط±ط§ظ‹ ظˆط¹ظ…ظ„ظٹط§ظ‹ ظˆظˆط¯ظٹط§ظ‹. ط§ط³طھط®ط¯ظ… ط§ظ„ط¥ظٹظ…ظˆط¬ظٹ.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:800,
+        messages:[{role:'user', content:prompt}]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.map(c=>c.text||'').join('') || 'ط­ط¯ط« ط®ط·ط£';
+    out.innerHTML = `<div class="ai-output">${text}</div>`;
+  } catch(e) {
+    out.innerHTML = '<p style="color:var(--red)">â‌Œ طھط¹ط°ط± ط§ظ„ط§طھطµط§ظ„طŒ طھط£ظƒط¯ ظ…ظ† ط§طھطµط§ظ„ ط§ظ„ط¥ظ†طھط±ظ†طھ</p>';
+  }
+}
+
+renderAll();
+</script>
+</body>
+</html>    border-radius:10px; cursor:pointer; transition:.2s;
   }
   .tab.active { background: var(--accent); color:#fff; }
 
