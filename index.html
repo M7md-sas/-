@@ -290,7 +290,28 @@
   .btn-pay.paid { background:rgba(45,212,191,.12); border-color:var(--green); color:var(--green); }
   .commit-actions { display:flex; gap:6px; align-items:center; flex-shrink:0; }
 
-  /* ── BTN DANGER ── */
+  /* ── IMPORT PREVIEW ── */
+  .preview-card {
+    background: var(--surface); border-radius:16px; padding:16px;
+    border:1px solid var(--border); margin-top:10px;
+  }
+  .preview-title { font-size:.85rem; font-weight:600; margin-bottom:12px; color:var(--text); }
+  .preview-item {
+    display:flex; align-items:center; gap:10px;
+    padding:10px 0; border-bottom:1px solid var(--border);
+  }
+  .preview-item:last-child { border-bottom:none; }
+  .preview-check {
+    width:22px; height:22px; border-radius:6px; border:1.5px solid var(--border);
+    background:none; cursor:pointer; flex-shrink:0; display:flex;
+    align-items:center; justify-content:center; font-size:.8rem; transition:.2s;
+  }
+  .preview-check.checked { background:var(--accent); border-color:var(--accent); }
+  .preview-name { flex:1; font-size:.88rem; }
+  .preview-amount { font-size:.88rem; font-weight:600; color:var(--red); }
+  .preview-actions { display:flex; gap:8px; margin-top:14px; }
+  .btn-confirm { flex:1; background:var(--accent); border:none; color:#fff; padding:11px; border-radius:10px; font-family:var(--font); font-size:.9rem; font-weight:600; cursor:pointer; }
+  .btn-cancel-import { flex:1; background:var(--surface2); border:1px solid var(--border); color:var(--muted); padding:11px; border-radius:10px; font-family:var(--font); font-size:.9rem; cursor:pointer; }
   .btn-danger {
     width:100%; background:rgba(248,113,113,.1); border:1px solid rgba(248,113,113,.3);
     color:var(--red); padding:11px; border-radius:12px; font-family:var(--font);
@@ -426,13 +447,10 @@
   </div>
 
   <div class="section-title">التزاماتي الشهرية</div>
-  <div style="display:flex;gap:8px;margin-bottom:8px">
-    <label class="btn-load-defaults" style="flex:1;cursor:pointer">
-      📷 استيراد من صورة
-      <input type="file" accept="image/*" style="display:none" onchange="importFromImage(this)">
-    </label>
-    <button class="btn-load-defaults" style="flex:1" onclick="loadDefaultCommitments()">📋 تحميل التزاماتي</button>
-  </div>
+  <label class="btn-load-defaults" style="width:100%;display:block;cursor:pointer;text-align:center;margin-bottom:8px">
+    📷 استيراد التزامات من صورة
+    <input type="file" accept="image/*" style="display:none" onchange="importFromImage(this)">
+  </label>
   <button class="btn-danger" onclick="deleteAllCommitments()">🗑 حذف جميع الالتزامات</button>
   <div id="importStatus" style="margin-top:8px"></div>
   <div id="commitList" style="margin-top:10px">
@@ -659,7 +677,7 @@ async function importFromImage(input) {
   const file = input.files[0];
   if (!file) return;
   const status = document.getElementById('importStatus');
-  status.innerHTML = '<div class="ai-loading"><div class="spinner"></div> الذكاء الاصطناعي يقرأ الصورة...</div>';
+  status.innerHTML = '<div class="ai-loading"><div class="spinner"></div> الذكاء الاصطناعي يحلل الصورة...</div>';
 
   const base64 = await new Promise((res, rej) => {
     const r = new FileReader();
@@ -674,45 +692,78 @@ async function importFromImage(input) {
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
+        max_tokens: 1500,
         messages: [{
           role: 'user',
           content: [
             {type: 'image', source: {type: 'base64', media_type: file.type, data: base64}},
-            {type: 'text', text: `استخرج من هذه الصورة قائمة الالتزامات المالية مع مبالغها.
-أجب بـ JSON فقط بهذا الشكل بدون أي نص آخر:
-[{"name":"اسم الالتزام","amount":0},...]
-- المبالغ أرقام فقط بدون رموز
-- إذا المبلغ غير واضح أو فيه كلمة "تقريباً" استخدم الرقم الموجود
-- إذا فيه "-" أو ما في رقم تجاهل هذا الالتزام`}
+            {type: 'text', text: 'أنت محلل مالي. افحص هذه الصورة واستخرج جميع الالتزامات أو المصاريف الشهرية مع مبالغها.\n\nأجب بـ JSON فقط بهذا الشكل:\n{"items":[{"name":"اسم الالتزام","amount":0,"icon":"إيموجي مناسب من: 🏠 🚗 📱 💊 🎓 🔌 💧 📦 💳"}],"summary":"ملخص قصير عما وجدته"}\n\nقواعد:\n- المبالغ أرقام فقط\n- إذا ما في مبلغ واضح تجاهل العنصر\n- اختر إيموجي مناسب لكل التزام'}
           ]
         }]
       })
     });
+
     const data = await response.json();
     const text = data.content?.map(c => c.text || '').join('');
     const clean = text.replace(/```json|```/g, '').trim();
-    const items = JSON.parse(clean);
+    const result = JSON.parse(clean);
+    const items = result.items || [];
 
-    if (!items.length) { status.innerHTML = '<p style="color:var(--red)">❌ ما قدرت أقرأ أي التزامات</p>'; return; }
+    if (!items.length) {
+      status.innerHTML = '<p style="color:var(--red);font-size:.85rem">❌ ما قدرت أقرأ أي التزامات</p>';
+      return;
+    }
 
-    const icons = ['🏠','🚗','📱','💊','🎓','🔌','💧','📦','💳'];
-    items.forEach((item, i) => {
-      state.commitments.push({
-        id: Date.now() + Math.random(),
-        name: item.name,
-        amount: item.amount,
-        icon: icons[i % icons.length]
+    let checkedItems = items.map((_,i) => i);
+
+    function renderPreview() {
+      status.innerHTML = '<div class="preview-card">'
+        + '<div class="preview-title">🤖 ' + (result.summary || 'تم العثور على ' + items.length + ' التزام') + '</div>'
+        + items.map((item, i) =>
+            '<div class="preview-item">'
+            + '<button class="preview-check ' + (checkedItems.includes(i)?'checked':'') + '" onclick="window._tp(' + i + ')">' + (checkedItems.includes(i)?'✓':'') + '</button>'
+            + '<div class="preview-name">' + item.icon + ' ' + item.name + '</div>'
+            + '<div class="preview-amount">' + item.amount.toLocaleString('ar-SA') + ' ر.س</div>'
+            + '</div>'
+          ).join('')
+        + '<div class="preview-actions">'
+        + '<button class="btn-confirm" onclick="window._ci()">✅ إضافة المحددة (' + checkedItems.length + ')</button>'
+        + '<button class="btn-cancel-import" onclick="window._xi()">إلغاء</button>'
+        + '</div></div>';
+    }
+
+    window._tp = (i) => {
+      const idx = checkedItems.indexOf(i);
+      if(idx>=0) checkedItems.splice(idx,1); else checkedItems.push(i);
+      renderPreview();
+    };
+
+    window._ci = () => {
+      if(!checkedItems.length) { alert('اختر التزام واحد على الأقل'); return; }
+      checkedItems.forEach(i => {
+        state.commitments.push({
+          id: Date.now() + Math.random(),
+          name: items[i].name,
+          amount: items[i].amount,
+          icon: items[i].icon
+        });
       });
-    });
-    save(); renderAll();
-    status.innerHTML = `<p style="color:var(--green);font-size:.85rem;margin-bottom:8px">✅ تم إضافة ${items.length} التزام!</p>`;
-    setTimeout(() => { status.innerHTML = ''; }, 3000);
+      save(); renderAll();
+      status.innerHTML = '<p style="color:var(--green);font-size:.85rem;padding:8px 0">✅ تم إضافة ' + checkedItems.length + ' التزام!</p>';
+      setTimeout(() => { status.innerHTML = ''; }, 3000);
+    };
+
+    window._xi = () => { status.innerHTML = ''; };
+
+    renderPreview();
+
   } catch(e) {
-    status.innerHTML = '<p style="color:var(--red)">❌ حدث خطأ، حاول مرة ثانية</p>';
+    status.innerHTML = '<p style="color:var(--red);font-size:.85rem">❌ حدث خطأ، حاول مرة ثانية</p>';
+    console.error(e);
   }
   input.value = '';
 }
+
 function deleteAllCommitments() {
   if(!state.commitments.length) return;
   if(!confirm('تأكيد حذف جميع الالتزامات؟')) return;
