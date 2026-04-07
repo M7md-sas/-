@@ -715,6 +715,17 @@ if(!S.salaries)S.salaries={};
 if(!S.subs)S.subs=[];
 // backwards compat
 if(S.salary&&!Object.keys(S.salaries).length){S.salaries['__default']=S.salary;delete S.salary;}
+// Migrate monthlyPaid keys to always be strings (fixes paid state resetting on re-render)
+(function migratePaidKeys(){
+  for(const month in S.monthlyPaid){
+    const obj=S.monthlyPaid[month];
+    const fixed={};
+    for(const k in obj) fixed[String(k)]=obj[k];
+    S.monthlyPaid[month]=fixed;
+  }
+  // Also ensure all commitment ids are numbers
+  S.commitments.forEach(c=>{if(typeof c.id==='string')c.id=parseInt(c.id)||c.id;});
+})();
 const save=()=>localStorage.setItem('masroofati',JSON.stringify(S));
 
 // activeContext: '__free' = no wallet, or walletId
@@ -904,10 +915,8 @@ function deleteExpense(id){
 /* ══ COMMITMENTS — scoped to active context ══ */
 function getActiveCommits(){
   const wid=getCtxWid();
-  // If free mode: show commits with no wallet
-  // If wallet mode: show commits assigned to that wallet
   if(!wid) return S.commitments.filter(c=>!c.walletId);
-  return S.commitments.filter(c=>c.walletId===wid);
+  return S.commitments.filter(c=>String(c.walletId)===String(wid));
 }
 
 function addCommitment(){
@@ -933,17 +942,20 @@ function confirmDeleteAllCommits(){
   });
 }
 function togglePaid(id){
+  const k=String(id);
   if(!S.monthlyPaid[currentMonth])S.monthlyPaid[currentMonth]={};
-  S.monthlyPaid[currentMonth][id]=!S.monthlyPaid[currentMonth][id];
+  // toggle: if was true set false (unpaid), if false/missing set true (paid)
+  S.monthlyPaid[currentMonth][k]=!S.monthlyPaid[currentMonth][k];
   save();
+  // animate button then re-render
   const btn=document.querySelector(`[data-pay="${id}"]`);
   if(btn){btn.classList.remove('popping');void btn.offsetWidth;btn.classList.add('popping');setTimeout(()=>btn.classList.remove('popping'),400);}
   renderAll();
 }
-function isPaid(id){return !!(S.monthlyPaid[currentMonth]&&S.monthlyPaid[currentMonth][id]);}
+function isPaid(id){const k=String(id);return !!(S.monthlyPaid[currentMonth]&&S.monthlyPaid[currentMonth][k]);}
 function toggleEditCommit(id){editingCommit=editingCommit===id?null:id;renderAll();}
 function saveEditCommit(id){
-  const c=S.commitments.find(c=>c.id===id);if(!c)return;
+  const c=S.commitments.find(c=>String(c.id)===String(id));if(!c)return;
   const n=document.getElementById('ec-name-'+id)?.value.trim();
   const a=parseFloat(document.getElementById('ec-amt-'+id)?.value)||0;
   if(n)c.name=n;if(a)c.amount=a;editingCommit=null;save();renderAll();
