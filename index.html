@@ -143,6 +143,17 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);overflow-x:h
 .vbtn{flex:1;padding:7px;background:var(--surface);border:1px solid var(--border);color:var(--muted);border-radius:10px;font-family:var(--font);font-size:.76rem;cursor:pointer;transition:.2s}
 .vbtn.active{background:var(--accent);border-color:var(--accent);color:#fff}
 
+/* ── SORT BAR ── */
+.sort-bar{display:flex;gap:5px;overflow-x:auto;padding-bottom:3px;margin-bottom:11px;scrollbar-width:none;align-items:center}
+.sort-bar::-webkit-scrollbar{display:none}
+.sort-bar-label{font-size:.65rem;color:var(--muted);white-space:nowrap;flex-shrink:0}
+.stag{padding:5px 11px;border-radius:99px;font-size:.7rem;font-weight:500;cursor:pointer;border:1px solid var(--border);color:var(--muted);white-space:nowrap;background:var(--surface);transition:.2s}
+.stag.active{background:var(--surface2);border-color:var(--accent);color:var(--accent)}
+.date-filter-row{display:none;margin-bottom:10px;align-items:center;gap:7px}
+.date-filter-row.show{display:flex}
+.date-filter-row input[type="date"]{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:10px;font-family:var(--font);font-size:.82rem;outline:none;flex:1}
+.date-filter-row input[type="date"]:focus{border-color:var(--accent)}
+
 /* ── TABLE ── */
 .table-wrap{overflow-x:auto;border-radius:13px;border:1px solid var(--border);margin-bottom:12px}
 table{width:100%;border-collapse:collapse;font-size:.77rem}
@@ -455,6 +466,17 @@ canvas{width:100%!important;display:block}
   <div class="view-toggle">
     <button class="vbtn active" id="vbCards" onclick="setView('cards')">📋 بطاقات</button>
     <button class="vbtn" id="vbTable" onclick="setView('table')">📊 جدول</button>
+  </div>
+  <div class="sort-bar">
+    <span class="sort-bar-label">ترتيب:</span>
+    <span class="stag active" id="sort-newest" onclick="setSort('newest',this)">🕐 الأحدث</span>
+    <span class="stag" id="sort-oldest" onclick="setSort('oldest',this)">📅 الأقدم</span>
+    <span class="stag" id="sort-highest" onclick="setSort('highest',this)">💸 الأعلى</span>
+    <span class="stag" id="sort-lowest" onclick="setSort('lowest',this)">💰 الأقل</span>
+    <span class="stag" id="sort-day" onclick="setSort('day',this)">📆 يوم محدد</span>
+  </div>
+  <div class="date-filter-row" id="day-filter-row">
+    <input type="date" id="filterDay" onchange="renderAllList()">
   </div>
   <div id="allList"></div>
 </div>
@@ -853,6 +875,7 @@ let selectedTag='auto';
 let selectedSubIcon='📡';
 let activeFilter='all';
 let activeView='cards';
+let activeSort='newest';
 let editingCommit=null;
 const nowD=new Date();
 let currentMonth=nowD.getFullYear()+'-'+String(nowD.getMonth()+1).padStart(2,'0');
@@ -921,7 +944,8 @@ async function addExpense(){
       if(['ضروري','كمالي','استغنِ'].includes(det))cat=det;aiNote=lines[1]||'';
     }catch(e){}
   }
-  S.expenses.push({id:Date.now(),name,amount,date,desc,cat,icon,aiNote,walletId:wid});
+  const addedAt=new Date().toISOString();
+  S.expenses.push({id:Date.now(),name,amount,date,desc,cat,icon,aiNote,walletId:wid,addedAt});
   save();
   ['expName','expAmount','expDesc'].forEach(id=>{document.getElementById(id).value='';});
   document.getElementById('expDate').value=nowD.toISOString().split('T')[0];
@@ -1164,28 +1188,79 @@ function renderAll(){
 
 function setFilter(f,el){activeFilter=f;document.querySelectorAll('.ftag').forEach(e=>e.classList.remove('active'));el.classList.add('active');renderAllList();}
 function setView(v){activeView=v;document.getElementById('vbCards').classList.toggle('active',v==='cards');document.getElementById('vbTable').classList.toggle('active',v==='table');renderAllList();}
+function setSort(s,el){
+  activeSort=s;
+  document.querySelectorAll('.stag').forEach(e=>e.classList.remove('active'));
+  el.classList.add('active');
+  const dayRow=document.getElementById('day-filter-row');
+  if(s==='day'){dayRow.classList.add('show');}else{dayRow.classList.remove('show');}
+  renderAllList();
+}
 
 function renderAllList(){
   const wid=getCtxWid();
-  const me=S.expenses.filter(e=>{
-    if(!e.date||!e.date.startsWith(currentMonth))return false;
+  let me=S.expenses.filter(e=>{
+    if(!e.date)return false;
     if(!wid)return !e.walletId;
     return e.walletId===wid;
   });
+
+  // Day filter mode: show all dates but filter to selected day
+  if(activeSort==='day'){
+    const fd=document.getElementById('filterDay')?.value;
+    if(fd) me=me.filter(e=>e.date===fd);
+    else me=[];
+  } else {
+    me=me.filter(e=>e.date.startsWith(currentMonth));
+  }
+
   let list=activeFilter==='all'?me:me.filter(e=>e.cat===activeFilter);
+
+  // Sort
+  if(activeSort==='newest'){
+    list=[...list].sort((a,b)=>{
+      const ta=a.addedAt||a.date;const tb=b.addedAt||b.date;
+      return new Date(tb)-new Date(ta);
+    });
+  } else if(activeSort==='oldest'){
+    list=[...list].sort((a,b)=>{
+      const ta=a.addedAt||a.date;const tb=b.addedAt||b.date;
+      return new Date(ta)-new Date(tb);
+    });
+  } else if(activeSort==='highest'){
+    list=[...list].sort((a,b)=>b.amount-a.amount);
+  } else if(activeSort==='lowest'){
+    list=[...list].sort((a,b)=>a.amount-b.amount);
+  } else if(activeSort==='day'){
+    list=[...list].sort((a,b)=>{
+      const ta=a.addedAt||a.date;const tb=b.addedAt||b.date;
+      return new Date(tb)-new Date(ta);
+    });
+  }
+
   const el=document.getElementById('allList');
   if(!list.length){el.innerHTML='<div class="empty-state"><div class="e-icon">📋</div><p>لا توجد مصروفات</p></div>';return;}
   if(activeView==='table'){
-    el.innerHTML=`<div class="table-wrap"><table><thead><tr><th>#</th><th>الاسم</th><th>المبلغ</th><th>الفئة</th><th>التاريخ</th><th></th></tr></thead><tbody>${list.map((e,i)=>`<tr>
+    el.innerHTML=`<div class="table-wrap"><table><thead><tr><th>#</th><th>الاسم</th><th>المبلغ</th><th>الفئة</th><th>التاريخ والوقت</th><th></th></tr></thead><tbody>${list.map((e,i)=>`<tr>
       <td style="color:var(--muted)">${i+1}</td><td>${e.icon||'💰'} ${e.name}</td>
       <td class="tbl-amt">${e.amount.toLocaleString('ar-SA')} ر.س</td>
       <td><span class="cat-badge cat-${e.cat||'كمالي'}">${e.cat||'؟'}</span></td>
-      <td class="tbl-date">${e.date||''}</td>
+      <td class="tbl-date">${formatDateTime(e)}</td>
       <td><button class="btn-del" onclick="deleteExpense(${e.id})">🗑</button></td>
     </tr>`).join('')}</tbody></table></div><div style="text-align:center;font-size:.73rem;color:var(--muted);padding:4px 0">${list.length} مصروف — ${fmt(list.reduce((a,e)=>a+e.amount,0))} ر.س</div>`;
   } else {
     el.innerHTML=list.map(expHtml).join('')+`<div style="text-align:center;font-size:.73rem;color:var(--muted);padding:4px 0">${list.length} مصروف — ${fmt(list.reduce((a,e)=>a+e.amount,0))} ر.س</div>`;
   }
+}
+
+function formatDateTime(e){
+  if(e.addedAt){
+    const d=new Date(e.addedAt);
+    const date=d.toLocaleDateString('ar-SA',{year:'numeric',month:'short',day:'numeric'});
+    const time=d.toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'});
+    return date+' • '+time;
+  }
+  return e.date||'';
 }
 
 function expHtml(e){
@@ -1199,7 +1274,7 @@ function expHtml(e){
     </div>
     <div class="exp-right">
       <div class="exp-amt">${e.amount.toLocaleString('ar-SA')} ر.س</div>
-      <div class="exp-date">${e.date||''}</div>
+      <div class="exp-date">${formatDateTime(e)}</div>
       <button class="btn-del" onclick="deleteExpense(${e.id})" style="display:block;margin-top:2px">🗑</button>
     </div>
   </div>`;
