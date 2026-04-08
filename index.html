@@ -181,7 +181,7 @@ td{padding:8px 9px;border-top:1px solid var(--border);vertical-align:middle}
 .paid-chk{display:inline-block;animation:paidAnim .2s ease}
 .edit-row{display:none;gap:5px;margin-top:7px;padding-top:7px;border-top:1px solid var(--border);flex-wrap:wrap}
 .edit-row.show{display:flex}
-.edit-inp{flex:1;min-width:80px;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 9px;border-radius:8px;font-family:var(--font);font-size:.8rem;outline:none}
+.edit-inp{flex:1;min-width:0;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 9px;border-radius:8px;font-family:var(--font);font-size:.8rem;outline:none;box-sizing:border-box}
 .edit-inp:focus{border-color:var(--accent)}
 .btn-es{background:var(--accent);border:none;color:#fff;padding:6px 11px;border-radius:8px;font-family:var(--font);font-size:.76rem;cursor:pointer}
 .btn-ec{background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:6px 9px;border-radius:8px;font-family:var(--font);font-size:.76rem;cursor:pointer}
@@ -353,6 +353,7 @@ canvas{width:100%!important;display:block}
     <div class="sum-card"><div class="sum-label">الدخل</div><div class="sum-value vg" id="s-salary">0 ر.س</div></div>
     <div class="sum-card"><div class="sum-label">المصروف</div><div class="sum-value vr" id="s-spent">0 ر.س</div></div>
     <div class="sum-card"><div class="sum-label">الالتزامات</div><div class="sum-value vy" id="s-commits">0 ر.س</div></div>
+    <div class="sum-card"><div class="sum-label">الاشتراكات 📡</div><div class="sum-value" style="color:var(--accent)" id="s-subs">0 ر.س</div></div>
     <div class="sum-card"><div class="sum-label">المتبقي</div><div class="sum-value vg" id="s-left">0 ر.س</div></div>
     <div class="sum-card full">
       <div class="sum-label">نسبة الإنفاق</div>
@@ -400,8 +401,7 @@ canvas{width:100%!important;display:block}
     </div>
     <div class="field"><label>الفئة</label>
       <div class="tag-row">
-        <div class="tag sel" id="tag-auto" onclick="selectTag('auto')">🤖 تلقائي</div>
-        <div class="tag" id="tag-ضروري" onclick="selectTag('ضروري')">✅ ضروري</div>
+        <div class="tag sel" id="tag-ضروري" onclick="selectTag('ضروري')">✅ ضروري</div>
         <div class="tag" id="tag-كمالي" onclick="selectTag('كمالي')">⚡ كمالي</div>
         <div class="tag" id="tag-استغنِ" onclick="selectTag('استغنِ')">❌ استغنِ</div>
       </div>
@@ -871,12 +871,13 @@ function updateCtxBanners(){
   });
 }
 
-let selectedTag='auto';
+let selectedTag='ضروري';
 let selectedSubIcon='📡';
 let activeFilter='all';
 let activeView='cards';
 let activeSort='newest';
 let editingCommit=null;
+let editingSub=null;
 const nowD=new Date();
 let currentMonth=nowD.getFullYear()+'-'+String(nowD.getMonth()+1).padStart(2,'0');
 // realMonth = the actual current calendar month, never changes with navigation arrows
@@ -923,32 +924,21 @@ function selectTag(t){
 }
 
 /* ══ ADD EXPENSE ══ */
-async function addExpense(){
+function addExpense(){
   const name=document.getElementById('expName').value.trim();
   const amount=parseFloat(document.getElementById('expAmount').value)||0;
   const date=document.getElementById('expDate').value||currentMonth+'-01';
   const desc=document.getElementById('expDesc').value.trim();
   if(!name||!amount)return;
-  let cat=selectedTag;const icon=autoIcon(name,desc);let aiNote='';
+  const cat=selectedTag;
+  const icon=autoIcon(name,desc);
   const wid=getCtxWid();
-  if(cat==='auto'){
-    cat='كمالي';
-    try{
-      const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
-        headers:{'Content-Type':'application/json','anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-        body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:50,
-          messages:[{role:'user',content:`صنّف: "${name}". كلمة: "ضروري" أو "كمالي" أو "استغنِ", ثم سطر وجملة تشجيعية.`}]})
-      });
-      const d=await res.json();const txt=d.content?.[0]?.text||'';
-      const lines=txt.trim().split('\n');const det=lines[0].trim();
-      if(['ضروري','كمالي','استغنِ'].includes(det))cat=det;aiNote=lines[1]||'';
-    }catch(e){}
-  }
   const addedAt=new Date().toISOString();
-  S.expenses.push({id:Date.now(),name,amount,date,desc,cat,icon,aiNote,walletId:wid,addedAt});
+  S.expenses.push({id:Date.now(),name,amount,date,desc,cat,icon,aiNote:'',walletId:wid,addedAt});
   save();
   ['expName','expAmount','expDesc'].forEach(id=>{document.getElementById(id).value='';});
   document.getElementById('expDate').value=nowD.toISOString().split('T')[0];
+  selectTag('ضروري');
   renderAll();switchTab('home');
 }
 
@@ -987,10 +977,8 @@ function confirmDeleteAllCommits(){
   });
 }
 function paidKey(id){
-  // Use explicit month string to ensure consistency across sessions
-  const d=new Date();
-  const m=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
-  return String(id)+'_'+m;
+  // Use currentMonth (the displayed month) so each month is independent
+  return String(id)+'_'+currentMonth;
 }
 function togglePaid(id){
   if(!S.paid)S.paid={};
@@ -1046,9 +1034,19 @@ function deleteSub(id){
   const s=S.subs.find(x=>x.id===id);
   showConfirm('حذف الاشتراك',`"${s?.name}"`,()=>{S.subs=S.subs.filter(x=>x.id!==id);save();renderSubs();});
 }
+function toggleEditSub(id){editingSub=editingSub===id?null:id;renderSubs();}
+function saveEditSub(id){
+  const s=S.subs.find(x=>x.id===id);if(!s)return;
+  const n=document.getElementById('se-name-'+id)?.value.trim();
+  const a=parseFloat(document.getElementById('se-amt-'+id)?.value)||0;
+  const st=document.getElementById('se-start-'+id)?.value;
+  const dur=parseInt(document.getElementById('se-dur-'+id)?.value)||s.duration;
+  if(n)s.name=n;if(a)s.amount=a;if(st)s.start=st;s.duration=dur;
+  editingSub=null;save();renderSubs();renderAll();
+}
 function renewSub(id){
   const s=S.subs.find(x=>x.id===id);if(!s)return;
-  s.start=new Date().toISOString().split('T')[0];save();renderSubs();
+  s.start=new Date().toISOString().split('T')[0];save();renderSubs();renderAll();
 }
 function getDaysLeft(start,duration){
   const end=new Date(start);end.setDate(end.getDate()+duration);
@@ -1078,7 +1076,8 @@ function renderSubs(){
     const endStr=endD.toLocaleDateString('ar-SA',{year:'numeric',month:'short',day:'numeric'});
     const borderColor=dl<=3?'var(--red)':dl<=7?'var(--yellow)':'var(--green)';
     const progColor=dl<=3?'var(--red)':dl<=7?'var(--yellow)':'var(--green)';
-    return `<div class="sub-item" style="border-right:3px solid ${borderColor}">
+    return `<div class="sub-item-wrap" style="margin-bottom:8px;border-radius:13px;overflow:hidden;border:1px solid ${borderColor};border-right:3px solid ${borderColor}">
+    <div class="sub-item" style="border:none;border-radius:0;margin-bottom:0">
       <div class="sub-icon-box">${s.icon||'📡'}</div>
       <div class="sub-info">
         <div class="sub-name">${s.name}</div>
@@ -1093,10 +1092,34 @@ function renderSubs(){
         <div><span class="days-badge ${bc}">${bt}</span></div>
         <div class="sub-actions">
           ${dl<=7?`<button class="btn-icon" onclick="renewSub(${s.id})" title="تجديد">🔄</button>`:''}
+          <button class="btn-icon" onclick="toggleEditSub(${s.id})" title="تعديل">✏️</button>
           <button class="btn-icon" onclick="deleteSub(${s.id})">🗑</button>
         </div>
       </div>
-    </div>`;
+    </div>
+    <div class="edit-row${editingSub===s.id?' show':''}" id="sub-edit-${s.id}" style="flex-direction:column;gap:7px;margin:0;padding:10px 12px;border-top:1px solid var(--border);box-sizing:border-box;width:100%">
+      <div style="display:flex;gap:7px;width:100%">
+        <div style="flex:1;min-width:0"><label style="font-size:.63rem;color:var(--muted);display:block;margin-bottom:3px">الاسم</label>
+          <input class="edit-inp" id="se-name-${s.id}" type="text" value="${s.name}" style="width:100%;box-sizing:border-box">
+        </div>
+        <div style="flex:1;min-width:0"><label style="font-size:.63rem;color:var(--muted);display:block;margin-bottom:3px">المبلغ</label>
+          <input class="edit-inp" id="se-amt-${s.id}" type="number" value="${s.amount}" inputmode="decimal" style="width:100%;box-sizing:border-box;direction:ltr;text-align:right">
+        </div>
+      </div>
+      <div style="display:flex;gap:7px;width:100%">
+        <div style="flex:1;min-width:0"><label style="font-size:.63rem;color:var(--muted);display:block;margin-bottom:3px">تاريخ البدء</label>
+          <input class="edit-inp" id="se-start-${s.id}" type="date" value="${s.start}" style="width:100%;box-sizing:border-box;font-size:.75rem">
+        </div>
+        <div style="width:90px;flex-shrink:0"><label style="font-size:.63rem;color:var(--muted);display:block;margin-bottom:3px">المدة (يوم)</label>
+          <input class="edit-inp" id="se-dur-${s.id}" type="number" value="${s.duration}" inputmode="numeric" style="width:100%;box-sizing:border-box">
+        </div>
+      </div>
+      <div style="display:flex;gap:7px;width:100%">
+        <button class="btn-es" style="flex:1" onclick="saveEditSub(${s.id})">✓ حفظ</button>
+        <button class="btn-ec" onclick="toggleEditSub(${s.id})">✕ إلغاء</button>
+      </div>
+    </div>
+  </div>`;
   }).join('');
 }
 
@@ -1126,11 +1149,14 @@ function renderAll(){
   // Commitments for this context
   const activeCommits=getActiveCommits();
   const totalCom=activeCommits.reduce((a,c)=>a+c.amount,0);
+  // Subscriptions for this context
+  const totalSubs=getActiveSubs().reduce((a,s)=>a+(s.amount||0),0);
   const left=salary-totalExp-totalCom;
 
   document.getElementById('s-salary').textContent=fmt(salary)+' ر.س';
   document.getElementById('s-spent').textContent=fmt(totalExp)+' ر.س';
   document.getElementById('s-commits').textContent=fmt(totalCom)+' ر.س';
+  document.getElementById('s-subs').textContent=fmt(totalSubs)+' ر.س';
   document.getElementById('s-left').textContent=fmt(left)+' ر.س';
   document.getElementById('s-left').className='sum-value '+(left>=0?'vg':'vr');
   const pct=salary>0?Math.min(100,Math.round((totalExp+totalCom)/salary*100)):0;
@@ -1688,7 +1714,7 @@ try{const sc=localStorage.getItem('masroofati-ctx');if(sc)activeCtx=sc;}catch(e)
 renderAll();
 renderWalletPanel();
 renderSubs();
-selectTag('auto');
+selectTag('ضروري');
 
 // Safe resize/orientation handler — only redraws when report panel is visible with real width
 let _rt=null;
