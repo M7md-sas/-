@@ -1,0 +1,1902 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="مالي">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#10b981">
+<meta name="description" content="تطبيق تتبع مصروفاتك الشخصية">
+<title>مالي</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg width='180' height='180' viewBox='0 0 180 180' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%2310b981'/%3E%3Cstop offset='100%25' style='stop-color:%23059669'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='180' height='180' rx='45' fill='url(%23g)'/%3E%3Cpath d='M 45 65 L 135 65 C 145 65 152 72 152 82 L 152 128 C 152 138 145 145 135 145 L 45 145 C 35 145 28 138 28 128 L 28 82 C 28 72 35 65 45 65 Z' fill='white'/%3E%3Cline x1='45' y1='90' x2='135' y2='90' stroke='%2310b981' stroke-width='4' stroke-linecap='round'/%3E%3Ccircle cx='105' cy='115' r='18' fill='%23fbbf24'/%3E%3Ccircle cx='105' cy='115' r='15' fill='none' stroke='white' stroke-width='2'/%3E%3Ctext x='105' y='123' text-anchor='middle' font-size='24' font-weight='bold' fill='white'%3E$%3C/text%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;
+  --border:rgba(255,255,255,0.07);--accent:#10b981;--accent2:#fbbf24;
+  --green:#2dd4bf;--yellow:#fbbf24;--red:#f87171;
+  --text:#e8eaf0;--muted:#7b7f94;
+  --font:'IBM Plex Sans Arabic',Tahoma,Arial,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:var(--font);background:var(--bg);color:var(--text);overflow-x:hidden}
+
+/* ── TOPBAR ── */
+.topbar{position:sticky;top:0;z-index:100;background:rgba(15,17,23,.95);backdrop-filter:blur(20px);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);gap:8px}
+.topbar-title{font-size:.9rem;font-weight:700;white-space:nowrap;flex-shrink:0}
+.topbar-title span{color:var(--accent)}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.month-badge{background:var(--surface2);padding:4px 10px;border-radius:20px;font-size:.7rem;color:var(--muted);white-space:nowrap}
+.wallet-pill{display:flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border);padding:5px 10px;border-radius:20px;cursor:pointer;transition:.2s;font-size:.72rem;font-weight:600;white-space:nowrap;max-width:130px;overflow:hidden}
+.wallet-pill:active{background:var(--surface)}
+.wallet-pill.has-wallet{border-color:rgba(108,99,255,.4);background:rgba(108,99,255,.1);color:var(--accent)}
+
+/* ── WALLET SELECTOR SHEET ── */
+.wsel-sheet{position:fixed;inset:0;z-index:300;display:none;align-items:flex-end;background:rgba(0,0,0,.7);backdrop-filter:blur(4px)}
+.wsel-sheet.open{display:flex}
+.wsel-inner{background:var(--surface);border-radius:20px 20px 0 0;width:100%;padding:16px;padding-bottom:env(safe-area-inset-bottom,16px);animation:sheetUp .22s ease}
+.wsel-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 14px}
+.wsel-title{font-size:.88rem;font-weight:700;margin-bottom:12px;text-align:center}
+.wsel-options{display:flex;flex-direction:column;gap:7px;max-height:55vh;overflow-y:auto}
+.wsel-opt{display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:13px;padding:11px 13px;cursor:pointer;transition:.2s}
+.wsel-opt:active{background:var(--surface)}
+.wsel-opt.active-opt{border-color:var(--accent);background:rgba(108,99,255,.08)}
+.wsel-opt-icon{font-size:1.3rem;flex-shrink:0}
+.wsel-opt-name{font-size:.88rem;font-weight:600;flex:1}
+.wsel-opt-bal{font-size:.75rem;font-weight:700;color:var(--green)}
+.wsel-opt-check{color:var(--accent);font-size:1rem}
+
+/* ── PANELS ── */
+.panel{display:none;padding:0 12px 90px;padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}
+.panel.active{display:block}
+
+/* ── WALLET CONTEXT BANNER ── */
+.ctx-banner{display:none;background:linear-gradient(135deg,rgba(108,99,255,.12),rgba(45,212,191,.06));border:1px solid rgba(108,99,255,.2);border-radius:14px;padding:10px 13px;margin-bottom:12px;flex-direction:row;align-items:center;gap:10px}
+.ctx-banner.show{display:flex}
+.ctx-icon{font-size:1.25rem;flex-shrink:0}
+.ctx-info{flex:1}
+.ctx-name{font-size:.85rem;font-weight:700}
+.ctx-bal{font-size:.7rem;color:var(--muted);margin-top:1px}
+.ctx-bal b{color:var(--green)}
+.ctx-mode-lbl{font-size:.62rem;background:rgba(108,99,255,.15);color:var(--accent);padding:2px 7px;border-radius:99px;font-weight:600;white-space:nowrap;flex-shrink:0}
+
+/* ── MONTH NAV ── */
+.month-nav{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border-radius:13px;padding:8px 12px;margin-bottom:12px;border:1px solid var(--border)}
+.mn-btn{background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;padding:3px 8px;border-radius:7px}
+.mn-btn:active{background:var(--surface2)}
+.mn-label{font-size:.88rem;font-weight:600}
+
+/* ── SETUP SALARY CARD ── */
+.setup-card{background:linear-gradient(135deg,#10b981,#059669);border-radius:16px;padding:15px;margin-bottom:12px;position:relative;overflow:hidden}
+.setup-card::after{content:'';position:absolute;top:-25px;right:-25px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.07)}
+.setup-card h3{font-size:.82rem;margin-bottom:10px;opacity:.9;font-weight:600}
+.setup-row{display:flex;flex-direction:column;gap:9px}
+.setup-input{width:100%;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.25);color:#fff;padding:12px 14px;border-radius:12px;font-family:var(--font);font-size:1rem;outline:none;direction:ltr;text-align:right;box-sizing:border-box}
+.setup-input::placeholder{color:rgba(255,255,255,.4)}
+.setup-input:focus{border-color:rgba(255,255,255,.6)}
+.btn-save{width:100%;background:rgba(255,255,255,.28);border:1px solid rgba(255,255,255,.4);color:#fff;padding:12px;border-radius:12px;font-family:var(--font);font-size:.95rem;font-weight:700;cursor:pointer;letter-spacing:.3px;transition:.15s}
+.btn-save:active{background:rgba(255,255,255,.4)}
+
+/* ── SUMMARY GRID ── */
+.sum-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px}
+.sum-card{background:var(--surface);border-radius:14px;padding:13px;border:1px solid var(--border)}
+.sum-card.full{grid-column:1/-1}
+.sum-label{font-size:.62rem;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.sum-value{font-size:1.2rem;font-weight:700}
+.vg{color:var(--green)}.vr{color:var(--red)}.vy{color:var(--yellow)}
+.prog-bar{height:6px;background:var(--surface2);border-radius:99px;overflow:hidden;margin-top:8px}
+.prog-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .5s}
+.prog-labels{display:flex;justify-content:space-between;font-size:.62rem;color:var(--muted);margin-top:3px}
+
+/* ── COMMIT SUMMARY BAR ── */
+.csb{background:var(--surface);border-radius:14px;padding:11px 13px;margin-bottom:12px;border:1px solid var(--border)}
+.csb-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center;margin-bottom:8px}
+.csb-lbl{font-size:.58rem;color:var(--muted);margin-bottom:2px;text-transform:uppercase}
+.csb-val{font-size:.95rem;font-weight:700}
+.csb-pct{font-size:.65rem;color:var(--muted);text-align:center;margin-top:3px}
+
+/* ── FIELDS & FORMS ── */
+.add-form{background:var(--surface);border-radius:16px;padding:14px;border:1px solid var(--border);margin-bottom:12px}
+.form-title{font-size:.88rem;font-weight:600;margin-bottom:11px}
+.field{margin-bottom:9px}
+.field label{font-size:.71rem;color:var(--muted);display:block;margin-bottom:4px}
+.field input,.field select{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:11px;font-family:var(--font);font-size:.87rem;outline:none;transition:.2s}
+.field input:focus,.field select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(108,99,255,.11)}
+.field select option{background:var(--surface2)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.btn-primary{width:100%;background:var(--accent);border:none;color:#fff;padding:12px;border-radius:12px;font-family:var(--font);font-size:.9rem;font-weight:600;cursor:pointer;transition:.15s}
+.btn-primary:active{transform:scale(.98);opacity:.9}
+
+/* ── SEC TITLE ── */
+.sec-title{font-size:.68rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;margin-top:14px}
+
+/* ── EXPENSE ITEMS ── */
+.exp-item{background:var(--surface);border-radius:13px;padding:11px 13px;display:flex;align-items:flex-start;gap:9px;margin-bottom:7px;border:1px solid var(--border);animation:sIn .2s ease}
+@keyframes sIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.exp-emoji{font-size:1.25rem;flex-shrink:0;margin-top:1px}
+.exp-body{flex:1;min-width:0}
+.exp-name{font-size:.86rem;font-weight:500}
+.exp-desc{font-size:.7rem;color:var(--muted);margin-top:2px}
+.exp-ai{font-size:.67rem;color:var(--accent);margin-top:3px;font-style:italic}
+.exp-right{text-align:left;flex-shrink:0}
+.exp-amt{font-size:.9rem;font-weight:700;color:var(--red)}
+.exp-date{font-size:.6rem;color:var(--muted);margin-top:2px}
+.cat-badge{display:inline-block;font-size:.55rem;padding:2px 6px;border-radius:99px;font-weight:600;margin-top:3px}
+.cat-housing{background:rgba(139,69,19,.18);color:#c8874a}
+.cat-food{background:rgba(220,20,60,.15);color:#f87171}
+.cat-transport{background:rgba(30,144,255,.15);color:#60a5fa}
+.cat-health{background:rgba(34,139,34,.18);color:#4ade80}
+.cat-education{background:rgba(153,50,204,.15);color:#c084fc}
+.cat-entertainment{background:rgba(255,140,0,.15);color:#fbbf24}
+.cat-clothing{background:rgba(255,105,180,.15);color:#f472b6}
+.cat-pets{background:rgba(255,215,0,.15);color:#facc15}
+.cat-gifts{background:rgba(218,165,32,.15);color:#d4a843}
+.cat-other{background:rgba(128,128,128,.15);color:#94a3b8}
+
+/* ── TAG ROW ── */
+.tag-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:7px}
+.tag{padding:8px 6px;border-radius:11px;font-size:.7rem;font-weight:600;cursor:pointer;border:2px solid var(--border);color:var(--muted);transition:.2s;background:var(--surface);display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;line-height:1.3}
+.tag .t-icon{font-size:1.4rem}
+.tag.sel{border-color:var(--accent);background:rgba(16,185,129,.1);color:var(--text)}.tag.sel{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* ── FILTER / VIEW ── */
+.filter-bar{display:flex;gap:5px;overflow-x:auto;padding-bottom:3px;margin-bottom:11px;scrollbar-width:none}
+.filter-bar::-webkit-scrollbar{display:none}
+.ftag{padding:5px 11px;border-radius:99px;font-size:.7rem;font-weight:500;cursor:pointer;border:1px solid var(--border);color:var(--muted);white-space:nowrap;background:var(--surface);transition:.2s}
+.ftag.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.view-toggle{display:flex;gap:6px;margin-bottom:11px}
+.vbtn{flex:1;padding:7px;background:var(--surface);border:1px solid var(--border);color:var(--muted);border-radius:10px;font-family:var(--font);font-size:.76rem;cursor:pointer;transition:.2s}
+.vbtn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* ── SORT BAR ── */
+.sort-bar{display:flex;gap:5px;overflow-x:auto;padding-bottom:3px;margin-bottom:11px;scrollbar-width:none;align-items:center}
+.sort-bar::-webkit-scrollbar{display:none}
+.sort-bar-label{font-size:.65rem;color:var(--muted);white-space:nowrap;flex-shrink:0}
+.stag{padding:5px 11px;border-radius:99px;font-size:.7rem;font-weight:500;cursor:pointer;border:1px solid var(--border);color:var(--muted);white-space:nowrap;background:var(--surface);transition:.2s}
+.stag.active{background:var(--surface2);border-color:var(--accent);color:var(--accent)}
+.date-filter-row{display:none;margin-bottom:10px;align-items:center;gap:7px}
+.date-filter-row.show{display:flex}
+.date-filter-row input[type="date"]{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:10px;font-family:var(--font);font-size:.82rem;outline:none;flex:1}
+.date-filter-row input[type="date"]:focus{border-color:var(--accent)}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto;border-radius:13px;border:1px solid var(--border);margin-bottom:12px}
+table{width:100%;border-collapse:collapse;font-size:.77rem}
+thead tr{background:var(--surface2)}
+th{padding:8px 9px;text-align:right;color:var(--muted);font-weight:600;font-size:.67rem;white-space:nowrap}
+td{padding:8px 9px;border-top:1px solid var(--border);vertical-align:middle}
+.tbl-amt{color:var(--red);font-weight:600;direction:ltr;text-align:right}
+.tbl-date{color:var(--muted);white-space:nowrap}
+
+/* ── COMMITMENTS ── */
+.commit-item{background:var(--surface);border-radius:13px;padding:11px 13px;display:flex;align-items:center;gap:9px;margin-bottom:7px;border:1px solid var(--border);transition:.3s}
+.commit-item.paid{border-color:rgba(45,212,191,.25);background:rgba(45,212,191,.04)}
+.ci-icon{font-size:1.15rem;width:28px;text-align:center;flex-shrink:0}
+.ci-body{flex:1;cursor:pointer}
+.ci-name{font-size:.86rem;font-weight:500}
+.commit-item.paid .ci-name{text-decoration:line-through;color:var(--muted)}
+.ci-amt{font-size:.74rem;color:var(--red);margin-top:2px}
+.commit-item.paid .ci-amt{color:var(--green)}
+.ci-actions{display:flex;gap:5px;align-items:center;flex-shrink:0}
+.btn-pay{background:none;border:1.5px solid var(--border);color:var(--muted);font-size:.67rem;padding:5px 8px;border-radius:8px;cursor:pointer;font-family:var(--font);transition:.25s;white-space:nowrap}
+.btn-pay.paid{background:rgba(45,212,191,.12);border-color:var(--green);color:var(--green)}
+@keyframes payPop{0%{transform:scale(1)}35%{transform:scale(1.15)}70%{transform:scale(.95)}100%{transform:scale(1)}}
+.btn-pay.popping{animation:payPop .35s ease}
+@keyframes paidAnim{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+.paid-chk{display:inline-block;animation:paidAnim .2s ease}
+.edit-row{display:none;gap:5px;margin-top:7px;padding-top:7px;border-top:1px solid var(--border);flex-wrap:wrap}
+.edit-row.show{display:flex}
+.edit-inp{flex:1;min-width:0;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 9px;border-radius:8px;font-family:var(--font);font-size:.8rem;outline:none;box-sizing:border-box}
+.edit-inp:focus{border-color:var(--accent)}
+.btn-es{background:var(--accent);border:none;color:#fff;padding:6px 11px;border-radius:8px;font-family:var(--font);font-size:.76rem;cursor:pointer}
+.btn-ec{background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:6px 9px;border-radius:8px;font-family:var(--font);font-size:.76rem;cursor:pointer}
+
+/* ── BUTTONS SMALL ── */
+.btn-del{background:none;border:none;color:var(--muted);font-size:.9rem;cursor:pointer;padding:4px 6px;border-radius:7px;transition:.2s}
+.btn-del:active{color:var(--red)}
+.btn-icon{background:none;border:1px solid var(--border);color:var(--muted);width:26px;height:26px;border-radius:7px;cursor:pointer;font-size:.78rem;display:flex;align-items:center;justify-content:center;transition:.2s}
+.btn-icon:active{background:var(--surface2)}
+.btn-danger-sm{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.25);color:var(--red);padding:7px 11px;border-radius:10px;font-family:var(--font);font-size:.76rem;cursor:pointer}
+
+/* ── SUBSCRIPTIONS ── */
+.sub-item{background:var(--surface);border-radius:13px;padding:12px 13px;display:flex;align-items:center;gap:10px;margin-bottom:8px;border:1px solid var(--border);animation:sIn .2s ease}
+.sub-icon-box{font-size:1.35rem;flex-shrink:0}
+.sub-info{flex:1;min-width:0}
+.sub-name{font-size:.86rem;font-weight:600}
+.sub-detail{font-size:.68rem;color:var(--muted);margin-top:2px}
+.sub-prog-wrap{margin-top:6px}
+.sub-prog-wrap .prog-bar{height:4px;margin-top:0}
+.sub-prog-lbl{font-size:.59rem;color:var(--muted);margin-top:2px}
+.sub-right{text-align:left;flex-shrink:0}
+.sub-amt{font-size:.9rem;font-weight:700;color:var(--accent)}
+.days-badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:.6rem;font-weight:700;white-space:nowrap;margin-top:3px}
+.dok{background:rgba(45,212,191,.12);color:var(--green)}
+.dwarn{background:rgba(251,191,36,.12);color:var(--yellow)}
+.dcrit{background:rgba(248,113,113,.12);color:var(--red)}
+.dexp{background:rgba(148,163,184,.1);color:var(--muted)}
+.sub-actions{display:flex;gap:4px;margin-top:5px;justify-content:flex-end}
+
+/* ── WALLET PANEL ── */
+.wallet-summary-panel{background:linear-gradient(135deg,rgba(108,99,255,.1),rgba(45,212,191,.05));border:1px solid rgba(108,99,255,.16);border-radius:16px;padding:14px;margin-bottom:13px}
+.wsp-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;padding-top:9px;border-top:1px solid var(--border)}
+.wsp-chip{background:var(--surface2);border-radius:9px;padding:6px 9px;display:flex;align-items:center;gap:6px;cursor:pointer;border:1px solid var(--border);transition:.2s}
+.wsp-chip.active-chip{border-color:var(--accent)}
+.wsp-chip-name{font-size:.69rem;font-weight:600}
+.wsp-chip-bal{font-size:.73rem;font-weight:700;color:var(--green)}
+.wallet-list{display:flex;flex-direction:column;gap:9px}
+.wallet-item{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:11px 13px;display:flex;align-items:center;gap:9px;transition:.2s;cursor:pointer}
+.wallet-item:active{background:var(--surface2)}
+.wallet-item.active-wallet{border-color:var(--accent);background:rgba(108,99,255,.05)}
+.w-icon-box{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.w-info{flex:1;min-width:0}
+.w-name{font-size:.86rem;font-weight:600}
+.w-type{font-size:.64rem;color:var(--muted);margin-top:2px}
+.w-bal-box{text-align:left;flex-shrink:0}
+.w-bal{font-size:1rem;font-weight:700;color:var(--green)}
+.w-bal-lbl{font-size:.58rem;color:var(--muted)}
+.w-actions{display:flex;gap:4px;flex-shrink:0}
+.bal-actions{display:flex;gap:7px;margin-top:9px}
+.bal-btn{flex:1;padding:8px;border-radius:10px;font-family:var(--font);font-size:.78rem;font-weight:600;cursor:pointer;border:none;display:flex;align-items:center;justify-content:center;gap:4px;transition:.15s}
+.bal-add{background:rgba(45,212,191,.13);color:var(--green);border:1px solid rgba(45,212,191,.28)}
+.bal-sub{background:rgba(248,113,113,.11);color:var(--red);border:1px solid rgba(248,113,113,.23)}
+.badge-active{display:inline-flex;padding:1px 7px;border-radius:99px;font-size:.53rem;font-weight:600;background:rgba(108,99,255,.15);color:var(--accent);margin-right:3px}
+.add-toggle{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:10px 13px;cursor:pointer;margin-bottom:7px;transition:.2s}
+.add-toggle:active{background:var(--surface2)}
+.at-icon{font-size:.88rem;transition:.3s}
+.at-icon.open{transform:rotate(45deg)}
+.inline-sec{display:none}.inline-sec.show{display:block}
+.wform{background:var(--surface);border-radius:14px;padding:13px;border:1px solid var(--border);margin-bottom:11px}
+.wform .field{margin-bottom:8px}
+.wform .field label{font-size:.69rem;color:var(--muted);display:block;margin-bottom:3px}
+.wform .field input,.wform .field select{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 11px;border-radius:9px;font-family:var(--font);font-size:.83rem;outline:none;transition:.2s}
+.wform .field input:focus,.wform .field select:focus{border-color:var(--accent)}
+.color-picker{display:flex;flex-wrap:wrap;gap:5px}
+.cswatch{width:22px;height:22px;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:.15s}
+.cswatch.selected{border-color:#fff;transform:scale(1.15)}
+.dist-chart{display:flex;height:10px;border-radius:99px;overflow:hidden;gap:2px;margin:8px 0}
+.dist-seg{border-radius:99px;transition:flex .5s}
+.legend-list{display:flex;flex-wrap:wrap;gap:5px}
+.legend-item{display:flex;align-items:center;gap:4px;font-size:.66rem;color:var(--muted)}
+.legend-dot{width:7px;height:7px;border-radius:2px;flex-shrink:0}
+.bucket-item{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:11px 13px;margin-bottom:9px}
+.bucket-header{display:flex;align-items:center;gap:9px;margin-bottom:6px}
+.b-icon-box{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.b-info{flex:1}
+.b-name{font-size:.82rem;font-weight:600}
+.b-meta{font-size:.63rem;color:var(--muted);margin-top:2px}
+.unalloc-box{background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.17);border-radius:13px;padding:10px 13px;display:flex;align-items:center;gap:9px;margin-bottom:10px}
+.unalloc-val{font-size:1rem;font-weight:800;color:var(--yellow)}
+.btn-auto{background:rgba(108,99,255,.12);border:1px solid rgba(108,99,255,.24);color:var(--accent);font-family:var(--font);font-size:.7rem;padding:5px 9px;border-radius:9px;cursor:pointer}
+.wsel-bar-h{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;padding-bottom:3px;margin-bottom:10px}
+.wsel-bar-h::-webkit-scrollbar{display:none}
+.wsel-h-btn{padding:5px 11px;border-radius:99px;font-size:.7rem;font-weight:500;cursor:pointer;border:1px solid var(--border);color:var(--muted);white-space:nowrap;transition:.2s;background:var(--surface);font-family:var(--font)}
+.wsel-h-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* ── REPORT ── */
+.report-section{background:var(--surface);border-radius:16px;padding:14px;border:1px solid var(--border);margin-bottom:12px}
+.rh{display:flex;align-items:center;gap:9px;margin-bottom:12px}
+.rh-icon{font-size:1.3rem}
+.rh h3{font-size:.88rem;font-weight:700}
+.rh p{font-size:.68rem;color:var(--muted)}
+.donut-row{display:flex;align-items:center;gap:9px;margin-bottom:6px}
+.donut-bar{flex:1;height:8px;background:var(--surface2);border-radius:99px;overflow:hidden}
+.donut-fill{height:100%;border-radius:99px;transition:width .5s}
+.donut-lbl{font-size:.7rem;color:var(--muted);width:60px}
+.donut-val{font-size:.7rem;font-weight:600;width:75px;text-align:left}
+canvas{width:100%!important;display:block}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(15,17,23,.97);backdrop-filter:blur(24px);border-top:1px solid var(--border);display:flex;padding:6px 0;padding-bottom:calc(6px + env(safe-area-inset-bottom,0px));z-index:100}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;color:var(--muted);cursor:pointer;font-family:var(--font);font-size:.53rem;padding:4px 0;transition:.2s}
+.nav-btn .icon{font-size:1.12rem}
+.nav-btn.active{color:var(--accent)}
+
+/* ── EMPTY / MISC ── */
+.empty-state{text-align:center;padding:30px 20px;color:var(--muted)}
+.empty-state .e-icon{font-size:1.9rem;margin-bottom:7px}
+.empty-state p{font-size:.8rem}
+.confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(4px);z-index:400;display:none;align-items:flex-end;justify-content:center;padding:12px}
+.confirm-overlay.open{display:flex}
+.confirm-sheet{background:var(--surface);border:1px solid var(--border);border-radius:18px 18px 14px 14px;padding:19px;width:100%;max-width:440px;animation:sheetUp .22s ease}
+@keyframes sheetUp{from{transform:translateY(20px);opacity:0}to{transform:none;opacity:1}}
+.cs-title{font-size:.93rem;font-weight:700;margin-bottom:4px}
+.cs-msg{font-size:.78rem;color:var(--muted);margin-bottom:14px;line-height:1.5}
+.cs-actions{display:flex;gap:8px}
+.btn-cs-cancel{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:11px;border-radius:12px;font-family:var(--font);font-size:.84rem;font-weight:600;cursor:pointer}
+.btn-cs-ok{flex:1;background:var(--red);border:none;color:#fff;padding:11px;border-radius:12px;font-family:var(--font);font-size:.84rem;font-weight:600;cursor:pointer}
+</style>
+</head>
+<body>
+
+<!-- ══ TOPBAR ══ -->
+<div class="topbar">
+  <div class="topbar-title"><svg width="22" height="22" viewBox="0 0 180 180" fill="none" style="vertical-align:middle;margin-left:5px"><defs><linearGradient id="tg1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#10b981"/><stop offset="100%" style="stop-color:#059669"/></linearGradient></defs><rect width="180" height="180" rx="45" fill="url(#tg1)"/><path d="M 45 65 L 135 65 C 145 65 152 72 152 82 L 152 128 C 152 138 145 145 135 145 L 45 145 C 35 145 28 138 28 128 L 28 82 C 28 72 35 65 45 65 Z" fill="white"/><line x1="45" y1="90" x2="135" y2="90" stroke="#10b981" stroke-width="4" stroke-linecap="round"/><circle cx="105" cy="115" r="18" fill="#fbbf24"/><circle cx="105" cy="115" r="15" fill="none" stroke="white" stroke-width="2"/><text x="105" y="123" text-anchor="middle" font-size="24" font-weight="bold" fill="white">$</text></svg> <span>مالي</span></div>
+  <div class="topbar-right">
+    <div class="month-badge" id="monthBadge">...</div>
+    <div class="wallet-pill" id="walletPill" onclick="openWselSheet()">
+      <span id="pillIcon">💼</span>
+      <span id="pillName">اختر محفظة</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══ WALLET SELECTOR SHEET ══ -->
+<div class="wsel-sheet" id="wselSheet">
+  <div class="wsel-inner">
+    <div class="wsel-handle"></div>
+    <div class="wsel-title">اختر المحفظة أو وضع بدون محفظة</div>
+    <div class="wsel-options" id="wselOptions"></div>
+  </div>
+</div>
+
+<!-- ══ PANEL: HOME ══ -->
+<div class="panel active" id="panel-home">
+  <div class="ctx-banner" id="ctxBanner">
+    <div class="ctx-icon" id="ctxIcon">💰</div>
+    <div class="ctx-info">
+      <div class="ctx-name" id="ctxName">—</div>
+      <div class="ctx-bal">الرصيد: <b id="ctxBal">—</b></div>
+    </div>
+    <div class="ctx-mode-lbl" id="ctxLbl">محفظة</div>
+  </div>
+
+  <div class="month-nav">
+    <button class="mn-btn" onclick="changeMonth(-1)">‹</button>
+    <div class="mn-label" id="currentMonthLabel">...</div>
+    <button class="mn-btn" onclick="changeMonth(1)">›</button>
+  </div>
+
+  <div class="setup-card">
+    <h3>💳 <span id="salaryCardLabel">الراتب الشهري</span></h3>
+    <div class="setup-row">
+      <input class="setup-input" id="salaryInput" type="number" placeholder="0.00" inputmode="decimal" onkeydown="if(event.key==='Enter')saveSalary()">
+      <button class="btn-save" onclick="saveSalary()">حفظ</button>
+    </div>
+  </div>
+
+  <div class="sum-grid">
+    <div class="sum-card"><div class="sum-label">الدخل</div><div class="sum-value vg" id="s-salary">0 ر.س</div></div>
+    <div class="sum-card"><div class="sum-label">المصروف</div><div class="sum-value vr" id="s-spent">0 ر.س</div></div>
+    <div class="sum-card"><div class="sum-label">الالتزامات</div><div class="sum-value vy" id="s-commits">0 ر.س</div></div>
+    <div class="sum-card"><div class="sum-label">الاشتراكات 📡</div><div class="sum-value" style="color:var(--accent)" id="s-subs">0 ر.س</div></div>
+    <div class="sum-card"><div class="sum-label">المتبقي</div><div class="sum-value vg" id="s-left">0 ر.س</div></div>
+    <div class="sum-card full">
+      <div class="sum-label">نسبة الإنفاق</div>
+      <div class="prog-bar"><div class="prog-fill" id="prog" style="width:0%"></div></div>
+      <div class="prog-labels"><span id="prog-pct">0%</span><span>100%</span></div>
+    </div>
+  </div>
+
+  <div class="csb">
+    <div class="csb-grid">
+      <div><div class="csb-lbl">الالتزامات</div><div class="csb-val vy" id="csb-total">0</div></div>
+      <div><div class="csb-lbl">✅ مسدّد</div><div class="csb-val vg" id="csb-paid">0</div></div>
+      <div><div class="csb-lbl">⏳ متبقي</div><div class="csb-val vr" id="csb-remain">0</div></div>
+    </div>
+    <div class="prog-bar" style="height:5px"><div class="prog-fill" id="csb-fill" style="width:0%;background:linear-gradient(90deg,var(--green),var(--accent))"></div></div>
+    <div class="csb-pct" id="csb-pct">0% مسدّد</div>
+  </div>
+
+  <div class="sec-title">آخر المصروفات</div>
+  <div id="recentList"></div>
+</div>
+
+<!-- ══ PANEL: ADD ══ -->
+<div class="panel" id="panel-add">
+  <div class="ctx-banner" id="ctxBannerAdd">
+    <div class="ctx-icon" id="ctxIconAdd">💰</div>
+    <div class="ctx-info"><div class="ctx-name" id="ctxNameAdd">—</div></div>
+    <div class="ctx-mode-lbl" id="ctxLblAdd">محفظة</div>
+  </div>
+  <div class="add-form">
+    <div class="form-title">➕ إضافة مصروف جديد</div>
+    <div class="field"><label>اسم المصروف</label>
+      <input id="expName" type="text" placeholder="قهوة، بنزين، دواء..." enterkeyhint="next" onkeydown="if(event.key==='Enter')document.getElementById('expAmount').focus()">
+    </div>
+    <div class="field-row">
+      <div class="field"><label>المبلغ (ر.س)</label>
+        <input id="expAmount" type="number" placeholder="0.00" inputmode="decimal" style="direction:ltr;text-align:right" enterkeyhint="next" onkeydown="if(event.key==='Enter')document.getElementById('expDate').focus()">
+      </div>
+      <div class="field"><label>التاريخ</label>
+        <input id="expDate" type="date" enterkeyhint="next" onkeydown="if(event.key==='Enter')document.getElementById('expDesc').focus()">
+      </div>
+    </div>
+    <div class="field"><label>وصف (اختياري)</label>
+      <input id="expDesc" type="text" placeholder="تفاصيل..." enterkeyhint="done" onkeydown="if(event.key==='Enter')addExpense()">
+    </div>
+    <div class="field"><label>الفئة</label>
+      <div class="tag-row">
+        <div class="tag sel" id="tag-housing" onclick="selectTag('housing')"><span class="t-icon">🏠</span>المعيشة والمنزل</div>
+        <div class="tag" id="tag-food" onclick="selectTag('food')"><span class="t-icon">🍔</span>الغذاء والمشروبات</div>
+        <div class="tag" id="tag-transport" onclick="selectTag('transport')"><span class="t-icon">🚗</span>النقل والمواصلات</div>
+        <div class="tag" id="tag-health" onclick="selectTag('health')"><span class="t-icon">💊</span>الصحة والعناية</div>
+        <div class="tag" id="tag-education" onclick="selectTag('education')"><span class="t-icon">📚</span>التعليم والتطور</div>
+        <div class="tag" id="tag-entertainment" onclick="selectTag('entertainment')"><span class="t-icon">🎮</span>الترفيه والهوايات</div>
+        <div class="tag" id="tag-clothing" onclick="selectTag('clothing')"><span class="t-icon">👕</span>الملابس والأحذية</div>
+        <div class="tag" id="tag-pets" onclick="selectTag('pets')"><span class="t-icon">🐕</span>الحيوانات الأليفة</div>
+        <div class="tag" id="tag-gifts" onclick="selectTag('gifts')"><span class="t-icon">🎁</span>الهدايا والحفلات</div>
+        <div class="tag" id="tag-other" onclick="selectTag('other')"><span class="t-icon">🗂️</span>الآخرى</div>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="addExpense()">💾 حفظ المصروف</button>
+  </div>
+</div>
+
+<!-- ══ PANEL: COMMITMENTS ══ -->
+<div class="panel" id="panel-commitments">
+  <div class="ctx-banner" id="ctxBannerCommit">
+    <div class="ctx-icon" id="ctxIconCommit">💰</div>
+    <div class="ctx-info"><div class="ctx-name" id="ctxNameCommit">—</div></div>
+    <div class="ctx-mode-lbl" id="ctxLblCommit">محفظة</div>
+  </div>
+  <div class="csb">
+    <div class="csb-grid">
+      <div><div class="csb-lbl">الإجمالي</div><div class="csb-val vy" id="cp-total">0 ر.س</div></div>
+      <div><div class="csb-lbl">✅ مسدّد</div><div class="csb-val vg" id="cp-paid">0 ر.س</div></div>
+      <div><div class="csb-lbl">⏳ متبقي</div><div class="csb-val vr" id="cp-remain">0 ر.س</div></div>
+    </div>
+    <div class="prog-bar" style="height:5px"><div class="prog-fill" id="cp-fill" style="width:0%;background:linear-gradient(90deg,var(--green),var(--accent))"></div></div>
+    <div class="csb-pct" id="cp-pct">0% مسدّد</div>
+  </div>
+  <div class="add-form">
+    <div class="form-title">🔗 إضافة التزام شهري</div>
+    <div class="field-row">
+      <div class="field"><label>الاسم</label>
+        <input id="cName" type="text" placeholder="إيجار، قسط..." enterkeyhint="next" onkeydown="if(event.key==='Enter')document.getElementById('cAmount').focus()">
+      </div>
+      <div class="field"><label>المبلغ (ر.س)</label>
+        <input id="cAmount" type="number" placeholder="0" inputmode="decimal" style="direction:ltr;text-align:right" enterkeyhint="done" onkeydown="if(event.key==='Enter')addCommitment()">
+      </div>
+    </div>
+    <button class="btn-primary" onclick="addCommitment()">إضافة الالتزام</button>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+    <div class="sec-title" style="margin:0">التزاماتي</div>
+    <button class="btn-danger-sm" onclick="confirmDeleteAllCommits()">🗑 حذف الكل</button>
+  </div>
+  <div id="commitList"></div>
+</div>
+
+<!-- ══ PANEL: ALL ══ -->
+<div class="panel" id="panel-all">
+  <div class="ctx-banner" id="ctxBannerAll">
+    <div class="ctx-icon" id="ctxIconAll">💰</div>
+    <div class="ctx-info"><div class="ctx-name" id="ctxNameAll">—</div></div>
+    <div class="ctx-mode-lbl" id="ctxLblAll">محفظة</div>
+  </div>
+  <div class="month-nav">
+    <button class="mn-btn" onclick="changeMonth(-1);renderAllList()">‹</button>
+    <div class="mn-label" id="allMonthLabel">...</div>
+    <button class="mn-btn" onclick="changeMonth(1);renderAllList()">›</button>
+  </div>
+  <div class="filter-bar">
+    <span class="ftag active" onclick="setFilter('all',this)">الكل</span>
+    <span class="ftag" onclick="setFilter('housing',this)">🏠 المعيشة</span>
+    <span class="ftag" onclick="setFilter('food',this)">🍔 الغذاء</span>
+    <span class="ftag" onclick="setFilter('transport',this)">🚗 النقل</span>
+    <span class="ftag" onclick="setFilter('health',this)">💊 الصحة</span>
+    <span class="ftag" onclick="setFilter('education',this)">📚 التعليم</span>
+    <span class="ftag" onclick="setFilter('entertainment',this)">🎮 الترفيه</span>
+    <span class="ftag" onclick="setFilter('clothing',this)">👕 الملابس</span>
+    <span class="ftag" onclick="setFilter('pets',this)">🐕 الحيوانات</span>
+    <span class="ftag" onclick="setFilter('gifts',this)">🎁 الهدايا</span>
+    <span class="ftag" onclick="setFilter('other',this)">🗂️ الآخرى</span>
+  </div>
+  <div class="view-toggle">
+    <button class="vbtn active" id="vbCards" onclick="setView('cards')">📋 بطاقات</button>
+    <button class="vbtn" id="vbTable" onclick="setView('table')">📊 جدول</button>
+  </div>
+  <div class="sort-bar">
+    <span class="sort-bar-label">ترتيب:</span>
+    <span class="stag active" id="sort-newest" onclick="setSort('newest',this)">🕐 الأحدث</span>
+    <span class="stag" id="sort-oldest" onclick="setSort('oldest',this)">📅 الأقدم</span>
+    <span class="stag" id="sort-highest" onclick="setSort('highest',this)">💸 الأعلى</span>
+    <span class="stag" id="sort-lowest" onclick="setSort('lowest',this)">💰 الأقل</span>
+    <span class="stag" id="sort-day" onclick="setSort('day',this)">📆 يوم محدد</span>
+    <span class="stag" id="sort-month" onclick="setSort('month',this)">🗓 شهر محدد</span>
+  </div>
+  <div class="date-filter-row" id="day-filter-row">
+    <input type="date" id="filterDay" onchange="renderAllList()">
+  </div>
+  <div class="date-filter-row" id="month-filter-row">
+    <input type="month" id="filterMonth" onchange="renderAllList()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:10px;font-family:var(--font);font-size:.82rem;outline:none;flex:1">
+  </div>
+  <div id="allList"></div>
+</div>
+
+<!-- ══ PANEL: SUBSCRIPTIONS ══ -->
+<div class="panel" id="panel-subs">
+  <div class="ctx-banner" id="ctxBannerSubs">
+    <div class="ctx-icon" id="ctxIconSubs">💰</div>
+    <div class="ctx-info"><div class="ctx-name" id="ctxNameSubs">—</div></div>
+    <div class="ctx-mode-lbl" id="ctxLblSubs">محفظة</div>
+  </div>
+  <div class="add-form">
+    <div class="form-title">📡 إضافة اشتراك جديد</div>
+    <div class="field-row">
+      <div class="field"><label>اسم الاشتراك</label>
+        <input id="subName" type="text" placeholder="نتفليكس، STC، جيم..." enterkeyhint="next" onkeydown="if(event.key==='Enter')document.getElementById('subAmount').focus()">
+      </div>
+      <div class="field"><label>التكلفة (ر.س/شهر)</label>
+        <input id="subAmount" type="number" placeholder="0.00" inputmode="decimal" style="direction:ltr;text-align:right" enterkeyhint="next" onkeydown="if(event.key==='Enter')document.getElementById('subStart').focus()">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>تاريخ البدء</label>
+        <input id="subStart" type="date">
+      </div>
+      <div class="field"><label>مدة الاشتراك</label>
+        <select id="subDuration">
+          <option value="30">شهر (30 يوم)</option>
+          <option value="90">3 أشهر</option>
+          <option value="180">6 أشهر</option>
+          <option value="365">سنة</option>
+          <option value="custom">مخصص...</option>
+        </select>
+      </div>
+    </div>
+    <div class="field" id="subCustomDaysField" style="display:none">
+      <label>عدد الأيام</label>
+      <input id="subCustomDays" type="number" placeholder="60" inputmode="numeric" min="1">
+    </div>
+    <div class="field"><label>الأيقونة</label>
+      <div class="tag-row" id="sub-icon-row">
+        <div class="tag sel" data-icon="📡" onclick="selectSubIcon(this)"><span class="t-icon">📡</span>إنترنت</div>
+        <div class="tag" data-icon="🎬" onclick="selectSubIcon(this)"><span class="t-icon">🎬</span>أفلام</div>
+        <div class="tag" data-icon="🎵" onclick="selectSubIcon(this)"><span class="t-icon">🎵</span>موسيقى</div>
+        <div class="tag" data-icon="📺" onclick="selectSubIcon(this)"><span class="t-icon">📺</span>تلفزيون</div>
+        <div class="tag" data-icon="📱" onclick="selectSubIcon(this)"><span class="t-icon">📱</span>جوال</div>
+        <div class="tag" data-icon="☁️" onclick="selectSubIcon(this)"><span class="t-icon">☁️</span>سحابة</div>
+        <div class="tag" data-icon="🏋️" onclick="selectSubIcon(this)"><span class="t-icon">🏋️</span>جيم</div>
+        <div class="tag" data-icon="📚" onclick="selectSubIcon(this)"><span class="t-icon">📚</span>تعليم</div>
+        <div class="tag" data-icon="🎮" onclick="selectSubIcon(this)"><span class="t-icon">🎮</span>ألعاب</div>
+        <div class="tag" data-icon="🌐" onclick="selectSubIcon(this)"><span class="t-icon">🌐</span>مواقع</div>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="addSub()">💾 إضافة الاشتراك</button>
+  </div>
+  <div class="csb" id="sub-stats" style="display:none">
+    <div class="csb-grid" style="grid-template-columns:1fr 1fr">
+      <div><div class="csb-lbl">شهري</div><div class="csb-val" style="color:var(--accent)" id="sub-monthly">0 ر.س</div></div>
+      <div><div class="csb-lbl">سنوي</div><div class="csb-val vy" id="sub-yearly">0 ر.س</div></div>
+    </div>
+  </div>
+  <div class="sec-title">اشتراكاتي</div>
+  <div id="subList"></div>
+</div>
+
+<!-- ══ PANEL: WALLETS ══ -->
+<div class="panel" id="panel-wallets">
+  <div class="wallet-summary-panel">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div><div style="font-size:.68rem;color:var(--muted);margin-bottom:3px">إجمالي المحافظ</div><div style="font-size:1.35rem;font-weight:800;color:var(--accent)" id="wsp-total">0 ر.س</div></div>
+      <div style="text-align:left"><div style="font-size:.68rem;color:var(--muted);margin-bottom:3px">الرصيد الحر</div><div style="font-size:1.35rem;font-weight:800;color:var(--green)" id="wsp-free">0 ر.س</div></div>
+    </div>
+    <div class="wsp-chips" id="wsp-chips"></div>
+  </div>
+  <div class="report-section" id="wdist-card" style="display:none">
+    <div class="rh"><div class="rh-icon">📊</div><div><h3>توزيع رصيد المحفظة النشطة</h3></div></div>
+    <div class="dist-chart" id="wdist-chart"></div>
+    <div class="legend-list" id="wdist-legend"></div>
+    <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:.73rem">
+      <span style="color:var(--muted)">مخصص: <b style="color:var(--text)" id="wdist-alloc">0</b></span>
+      <span style="color:var(--muted)">حر: <b style="color:var(--yellow)" id="wdist-free">0</b></span>
+    </div>
+  </div>
+
+  <div class="sec-title" style="margin-top:4px">💼 محافظي</div>
+  <div class="add-toggle" onclick="toggleSec('add-wallet-sec','at-w')">
+    <span style="font-size:.83rem;font-weight:600">➕ إضافة محفظة</span>
+    <span class="at-icon" id="at-w">+</span>
+  </div>
+  <div class="inline-sec" id="add-wallet-sec">
+    <div class="wform">
+      <div class="field-row">
+        <div class="field"><label>الاسم</label><input id="w-name" type="text" placeholder="راتب، استثمار..."></div>
+        <div class="field"><label>النوع</label>
+          <select id="w-type">
+            <option value="salary">راتب 💵</option><option value="investment">استثمار 📈</option>
+            <option value="rental">إيجار 🏠</option><option value="freelance">عمل حر 💻</option>
+            <option value="project">مشروع 🚀</option><option value="business">تجارة 🏪</option>
+            <option value="savings">مدخرات 🏦</option><option value="other">أخرى 🗂️</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>الرصيد (ر.س)</label><input id="w-balance" type="number" placeholder="0" inputmode="decimal" style="direction:ltr;text-align:right"></div>
+        <div class="field"><label>وصف (اختياري)</label><input id="w-desc" type="text"></div>
+      </div>
+      <button class="btn-primary" onclick="addWallet()">💾 إضافة</button>
+    </div>
+  </div>
+  <div class="inline-sec" id="edit-wallet-sec">
+    <div class="wform" style="border-color:rgba(108,99,255,.3)">
+      <div style="font-size:.83rem;font-weight:600;margin-bottom:8px">✏️ تعديل المحفظة</div>
+      <div class="field-row">
+        <div class="field"><label>الاسم</label><input id="ew-name" type="text"></div>
+        <div class="field"><label>الرصيد</label><input id="ew-balance" type="number" inputmode="decimal" style="direction:ltr;text-align:right"></div>
+      </div>
+      <div class="field"><label>الوصف</label><input id="ew-desc" type="text"></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-primary" style="flex:1" onclick="saveEditWallet()">💾 حفظ</button>
+        <button class="btn-danger-sm" onclick="cancelEditWallet()">إلغاء</button>
+      </div>
+    </div>
+  </div>
+  <div class="wallet-list" id="wallet-list"></div>
+
+  <div class="sec-title" style="margin-top:16px">🪣 بنود التوزيع</div>
+  <div class="wsel-bar-h" id="bucket-wsel"></div>
+  <div class="unalloc-box">
+    <div style="font-size:1.05rem">💡</div>
+    <div style="flex:1"><div style="font-size:.65rem;color:var(--muted);margin-bottom:1px">غير مخصص</div>
+      <div class="unalloc-val">ر.س <span id="unalloc-val">0</span></div></div>
+    <button class="btn-auto" onclick="autoDistribute()">توزيع ⚡</button>
+  </div>
+  <div class="add-toggle" onclick="toggleSec('add-bucket-sec','at-b')">
+    <span style="font-size:.83rem;font-weight:600">➕ إضافة بند</span>
+    <span class="at-icon" id="at-b">+</span>
+  </div>
+  <div class="inline-sec" id="add-bucket-sec">
+    <div class="wform">
+      <div class="field-row">
+        <div class="field"><label>الاسم</label><input id="b-name" type="text" placeholder="توفير، طوارئ..."></div>
+        <div class="field"><label>الأيقونة</label>
+          <select id="b-icon"><option value="💰">💰</option><option value="📈">📈</option><option value="🆘">🆘</option><option value="🏠">🏠</option><option value="🛒">🛒</option><option value="🎓">🎓</option><option value="✈️">✈️</option><option value="🏥">🏥</option><option value="🎁">🎁</option><option value="📦">📦</option></select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>طريقة</label><select id="b-method" onchange="toggleBMethod()"><option value="percent">نسبة %</option><option value="fixed">مبلغ ثابت</option></select></div>
+        <div class="field" id="b-pct-g"><label>النسبة %</label><input id="b-percent" type="number" placeholder="20" min="1" max="100" inputmode="decimal"></div>
+        <div class="field" id="b-fix-g" style="display:none"><label>المبلغ</label><input id="b-fixed" type="number" placeholder="500" inputmode="decimal" style="direction:ltr;text-align:right"></div>
+      </div>
+      <div class="field"><label>الهدف (اختياري)</label><input id="b-goal" type="number" placeholder="50000" inputmode="decimal" style="direction:ltr;text-align:right"></div>
+      <div class="field"><label>اللون</label>
+        <div class="color-picker" id="color-picker">
+          <div class="cswatch selected" data-color="#6c63ff" style="background:#6c63ff" onclick="selectColor(this)"></div>
+          <div class="cswatch" data-color="#2dd4bf" style="background:#2dd4bf" onclick="selectColor(this)"></div>
+          <div class="cswatch" data-color="#fbbf24" style="background:#fbbf24" onclick="selectColor(this)"></div>
+          <div class="cswatch" data-color="#f87171" style="background:#f87171" onclick="selectColor(this)"></div>
+          <div class="cswatch" data-color="#8b5cf6" style="background:#8b5cf6" onclick="selectColor(this)"></div>
+          <div class="cswatch" data-color="#ec4899" style="background:#ec4899" onclick="selectColor(this)"></div>
+          <div class="cswatch" data-color="#14b8a6" style="background:#14b8a6" onclick="selectColor(this)"></div>
+          <div class="cswatch" data-color="#f97316" style="background:#f97316" onclick="selectColor(this)"></div>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="addBucket()">💾 إضافة</button>
+    </div>
+  </div>
+  <div class="inline-sec" id="edit-bucket-sec">
+    <div class="wform" style="border-color:rgba(108,99,255,.3)">
+      <div style="font-size:.83rem;font-weight:600;margin-bottom:8px">✏️ تعديل البند</div>
+      <div class="field-row">
+        <div class="field"><label>الاسم</label><input id="eb-name" type="text"></div>
+        <div class="field"><label>طريقة</label><select id="eb-method" onchange="toggleEBMethod()"><option value="percent">نسبة %</option><option value="fixed">مبلغ ثابت</option></select></div>
+      </div>
+      <div class="field-row">
+        <div class="field" id="eb-pct-g"><label>النسبة %</label><input id="eb-percent" type="number" inputmode="decimal"></div>
+        <div class="field" id="eb-fix-g" style="display:none"><label>المبلغ</label><input id="eb-fixed" type="number" inputmode="decimal" style="direction:ltr;text-align:right"></div>
+        <div class="field"><label>الهدف</label><input id="eb-goal" type="number" inputmode="decimal" style="direction:ltr;text-align:right"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>المجمّع (ر.س)</label><input id="eb-saved" type="number" inputmode="decimal" style="direction:ltr;text-align:right"></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-primary" style="flex:1" onclick="saveEditBucket()">💾 حفظ</button>
+        <button class="btn-danger-sm" onclick="cancelEditBucket()">إلغاء</button>
+      </div>
+    </div>
+  </div>
+  <div id="bucket-list"></div>
+</div>
+
+<!-- ══ PANEL: REPORT ══ -->
+<div class="panel" id="panel-report">
+  <div class="ctx-banner" id="ctxBannerReport">
+    <div class="ctx-icon" id="ctxIconReport">💰</div>
+    <div class="ctx-info"><div class="ctx-name" id="ctxNameReport">—</div></div>
+    <div class="ctx-mode-lbl" id="ctxLblReport">محفظة</div>
+  </div>
+  <div class="report-section">
+    <div class="rh"><div class="rh-icon">📊</div><div><h3>توزيع المصروفات</h3><p>يتحدث مع كل إدخال</p></div></div>
+    <div id="report-bars"></div>
+    <div style="margin-top:14px"><canvas id="reportChart" height="175"></canvas></div>
+  </div>
+  <div class="report-section">
+    <div class="rh"><div class="rh-icon">📅</div><div><h3>إنفاق يومي</h3><p>هذا الشهر</p></div></div>
+    <canvas id="dailyChart" height="155"></canvas>
+  </div>
+  <div class="report-section">
+    <div class="rh"><div class="rh-icon">📈</div><div><h3>مقارنة آخر 6 أشهر</h3></div></div>
+    <canvas id="monthlyChart" height="155"></canvas>
+  </div>
+</div>
+
+<!-- ══ BOTTOM NAV ══ -->
+<div class="bottom-nav">
+  <button class="nav-btn active" onclick="switchTab('home')" id="nav-home"><span class="icon">🏠</span>الرئيسية</button>
+  <button class="nav-btn" onclick="switchTab('add')" id="nav-add"><span class="icon">➕</span>المصروفات</button>
+  <button class="nav-btn" onclick="switchTab('commitments')" id="nav-commitments"><span class="icon">🔗</span>الالتزامات</button>
+  <button class="nav-btn" onclick="switchTab('subs')" id="nav-subs"><span class="icon">📡</span>الاشتراكات</button>
+  <button class="nav-btn" onclick="switchTab('wallets')" id="nav-wallets"><span class="icon">💼</span>المحفظة</button>
+  <button class="nav-btn" onclick="switchTab('all')" id="nav-all"><span class="icon">📋</span>السجل</button>
+  <button class="nav-btn" onclick="switchTab('report')" id="nav-report"><span class="icon">📊</span>التقرير</button>
+</div>
+
+<!-- ══ CONFIRM SHEET ══ -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-sheet">
+    <div class="cs-title" id="csTitle">تأكيد</div>
+    <div class="cs-msg" id="csMsg"></div>
+    <div class="cs-actions">
+      <button class="btn-cs-cancel" onclick="closeConfirm()">إلغاء</button>
+      <button class="btn-cs-ok" id="csOkBtn">تأكيد</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══ AUTO ICON ══ */
+const IMAP=[
+  {k:['قهوة','كافيه','ستاربكس'],i:'☕'},{k:['مطعم','اكل','أكل','غداء','عشاء','فطور','برغر','بيتزا','شاورما'],i:'🍽️'},
+  {k:['سوبرماركت','بقالة','هايبر','لولو','بنده','كارفور'],i:'🛒'},{k:['مياه','عصير','مشروب'],i:'🥤'},
+  {k:['بنزين','وقود','محطة'],i:'⛽'},{k:['سيارة','صيانة','ورشة','اوبر','تاكسي'],i:'🚗'},
+  {k:['كهرباء','فاتورة'],i:'⚡'},{k:['نت','انترنت','واي فاي','stc','زين','موبايلي'],i:'📶'},
+  {k:['جوال','موبايل','هاتف'],i:'📱'},{k:['دواء','صيدلية','دكتور','مستشفى'],i:'💊'},
+  {k:['نتفليكس','netflix','شاهد','spotify','اشتراك'],i:'🎬'},{k:['العاب','لعبة','بلايستيشن'],i:'🎮'},
+  {k:['ملابس','ثياب','حذاء'],i:'👕'},{k:['جامعة','دراسة','رسوم','كورس'],i:'📚'},
+  {k:['ايجار','إيجار','سكن','شقة'],i:'🏠'},{k:['بنك','قرض','قسط','سلف'],i:'🏦'},
+  {k:['هدية','تبرع','صدقة'],i:'🎁'},{k:['سفر','طيران','فندق'],i:'✈️'},{k:['جيم','رياضة'],i:'🏋️'},
+];
+function autoIcon(n,d=''){const t=(n+' '+d).toLowerCase();for(const r of IMAP)if(r.k.some(k=>t.includes(k)))return r.i;return '💰';}
+
+const CATS={
+  housing:{name:'المعيشة والمنزل',icon:'🏠',color:'#c8874a'},
+  food:{name:'الغذاء والمشروبات',icon:'🍔',color:'#f87171'},
+  transport:{name:'النقل والمواصلات',icon:'🚗',color:'#60a5fa'},
+  health:{name:'الصحة والعناية',icon:'💊',color:'#4ade80'},
+  education:{name:'التعليم والتطور',icon:'📚',color:'#c084fc'},
+  entertainment:{name:'الترفيه والهوايات',icon:'🎮',color:'#fbbf24'},
+  clothing:{name:'الملابس والأحذية',icon:'👕',color:'#f472b6'},
+  pets:{name:'الحيوانات الأليفة',icon:'🐕',color:'#facc15'},
+  gifts:{name:'الهدايا والحفلات',icon:'🎁',color:'#d4a843'},
+  other:{name:'الآخرى',icon:'🗂️',color:'#94a3b8'},
+};
+function catBadge(cat){
+  const c=CATS[cat];
+  if(!c)return `<span class="cat-badge cat-other">🗂️ الآخرى</span>`;
+  return `<span class="cat-badge cat-${cat}">${c.icon} ${c.name}</span>`;
+}
+const fmt=n=>Number(n).toLocaleString('en-US',{maximumFractionDigits:0});
+
+/* ══ STATE ══ */
+let S=JSON.parse(localStorage.getItem('masroofati')||'{}');
+if(!S.expenses)S.expenses=[];
+if(!S.commitments)S.commitments=[];
+if(!S.monthlyPaid)S.monthlyPaid={};
+if(!S.salaries)S.salaries={};
+if(!S.subs)S.subs=[];
+// backwards compat
+if(S.salary&&!Object.keys(S.salaries).length){S.salaries['__default']=S.salary;delete S.salary;}
+// Migrate monthlyPaid keys to always be strings (fixes paid state resetting on re-render)
+(function migratePaidKeys(){
+  for(const month in S.monthlyPaid){
+    const obj=S.monthlyPaid[month];
+    const fixed={};
+    for(const k in obj) fixed[String(k)]=obj[k];
+    S.monthlyPaid[month]=fixed;
+  }
+  // Also ensure all commitment ids are numbers
+  S.commitments.forEach(c=>{if(typeof c.id==='string')c.id=parseInt(c.id)||c.id;});
+  // Always ensure S.paid exists
+  if(!S.paid)S.paid={};
+  // Always migrate from old formats (safe to run multiple times - only adds true values)
+  for(const month in S.monthlyPaid){
+    for(const cid in S.monthlyPaid[month]){
+      if(S.monthlyPaid[month][cid]===true)
+        S.paid[String(cid)+'_'+month]=true;
+    }
+  }
+  S.commitments.forEach(c=>{
+    if(c.paidMonths){
+      for(const month in c.paidMonths){
+        if(c.paidMonths[month]===true)
+          S.paid[String(c.id)+'_'+month]=true;
+      }
+    }
+  });
+})();
+const save=()=>localStorage.setItem('masroofati',JSON.stringify(S));
+
+// activeContext: '__free' = no wallet, or walletId
+let activeCtx='__free';
+
+/* WALLET STATE */
+const WI={
+  salary:{icon:'💵',color:'rgba(45,212,191,.12)',text:'راتب'},
+  investment:{icon:'📈',color:'rgba(108,99,255,.12)',text:'استثمار'},
+  rental:{icon:'🏠',color:'rgba(251,191,36,.12)',text:'إيجار'},
+  freelance:{icon:'💻',color:'rgba(139,92,246,.12)',text:'عمل حر'},
+  project:{icon:'🚀',color:'rgba(236,72,153,.12)',text:'مشروع'},
+  business:{icon:'🏪',color:'rgba(20,184,166,.12)',text:'تجارة'},
+  savings:{icon:'🏦',color:'rgba(99,102,241,.12)',text:'مدخرات'},
+  other:{icon:'🗂️',color:'rgba(148,163,184,.12)',text:'أخرى'},
+};
+let ws={wallets:[],buckets:[],selectedColor:'#6c63ff',editingWalletId:null,editingBucketId:null};
+const loadWs=()=>{try{const s=localStorage.getItem('masroofati-wallet');if(s){const p=JSON.parse(s);ws={...ws,...p};}}catch(e){}};
+const saveWs=()=>localStorage.setItem('masroofati-wallet',JSON.stringify({wallets:ws.wallets,buckets:ws.buckets}));
+
+function getCtxWallet(){return activeCtx==='__free'?null:ws.wallets.find(w=>w.id===activeCtx)||null;}
+function getCtxWid(){const w=getCtxWallet();return w?w.id:null;}
+function getCtxSalary(){const wid=getCtxWid();return S.salaries[wid||'__default']||0;}
+
+/* ══ WALLET SELECTOR ══ */
+function openWselSheet(){
+  renderWselOptions();
+  document.getElementById('wselSheet').classList.add('open');
+}
+function closeWselSheet(){document.getElementById('wselSheet').classList.remove('open');}
+document.getElementById('wselSheet').addEventListener('click',function(e){if(e.target===this)closeWselSheet();});
+
+function renderWselOptions(){
+  const el=document.getElementById('wselOptions');
+  let html=`<div class="wsel-opt${activeCtx==='__free'?' active-opt':''}" onclick="setCtx('__free')">
+    <div class="wsel-opt-icon">💼</div>
+    <div class="wsel-opt-name">بدون محفظة</div>
+    <div class="wsel-opt-bal">راتب شهري</div>
+    ${activeCtx==='__free'?'<div class="wsel-opt-check">✓</div>':''}
+  </div>`;
+  ws.wallets.forEach(w=>{
+    const meta=WI[w.type]||WI.other;
+    html+=`<div class="wsel-opt${activeCtx===w.id?' active-opt':''}" onclick="setCtx('${w.id}')">
+      <div class="wsel-opt-icon">${meta.icon}</div>
+      <div>
+        <div class="wsel-opt-name">${w.name}</div>
+        <div style="font-size:.65rem;color:var(--muted)">${meta.text}</div>
+      </div>
+      <div class="wsel-opt-bal">${fmt(w.balance)} ر.س</div>
+      ${activeCtx===w.id?'<div class="wsel-opt-check">✓</div>':''}
+    </div>`;
+  });
+  el.innerHTML=html;
+}
+
+function setCtx(id){
+  activeCtx=id;
+  try{localStorage.setItem('masroofati-ctx',id);}catch(e){}
+  closeWselSheet();
+  updatePill();
+  renderAll();
+  renderWalletPanel();
+}
+
+function updatePill(){
+  const pill=document.getElementById('walletPill');
+  if(activeCtx==='__free'){
+    document.getElementById('pillIcon').textContent='💼';
+    document.getElementById('pillName').textContent='بدون محفظة';
+    pill.className='wallet-pill';
+  } else {
+    const w=ws.wallets.find(x=>x.id===activeCtx);
+    const meta=w?(WI[w.type]||WI.other):null;
+    document.getElementById('pillIcon').textContent=meta?meta.icon:'💼';
+    document.getElementById('pillName').textContent=w?w.name:'محفظة';
+    pill.className='wallet-pill has-wallet';
+  }
+}
+
+/* ══ CTX BANNERS ══ update context banners across all panels */
+function updateCtxBanners(){
+  const wid=getCtxWid();
+  const w=getCtxWallet();
+  const meta=w?(WI[w.type]||WI.other):null;
+  const bannerIds=[
+    {b:'ctxBanner',ic:'ctxIcon',nm:'ctxName',bl:'ctxBal',lb:'ctxLbl',showBal:true},
+    {b:'ctxBannerAdd',ic:'ctxIconAdd',nm:'ctxNameAdd',lb:'ctxLblAdd',showBal:false},
+    {b:'ctxBannerCommit',ic:'ctxIconCommit',nm:'ctxNameCommit',lb:'ctxLblCommit',showBal:false},
+    {b:'ctxBannerAll',ic:'ctxIconAll',nm:'ctxNameAll',lb:'ctxLblAll',showBal:false},
+    {b:'ctxBannerSubs',ic:'ctxIconSubs',nm:'ctxNameSubs',lb:'ctxLblSubs',showBal:false},
+    {b:'ctxBannerReport',ic:'ctxIconReport',nm:'ctxNameReport',lb:'ctxLblReport',showBal:false},
+  ];
+  bannerIds.forEach(({b,ic,nm,bl,lb,showBal})=>{
+    const banner=document.getElementById(b);if(!banner)return;
+    if(activeCtx==='__free'){
+      banner.classList.remove('show');
+    } else {
+      banner.classList.add('show');
+      document.getElementById(ic).textContent=meta?meta.icon:'💰';
+      document.getElementById(nm).textContent=w?w.name:'—';
+      if(bl&&showBal&&document.getElementById(bl)) document.getElementById(bl).textContent=w?fmt(w.balance)+' ر.س':'—';
+      if(lb&&document.getElementById(lb)) document.getElementById(lb).textContent=meta?meta.text:'محفظة';
+    }
+  });
+}
+
+let selectedTag='housing';
+let selectedSubIcon='📡';
+let activeFilter='all';
+let activeView='cards';
+let activeSort='newest';
+let editingCommit=null;
+let editingSub=null;
+const nowD=new Date();
+let currentMonth=nowD.getFullYear()+'-'+String(nowD.getMonth()+1).padStart(2,'0');
+// realMonth = the actual current calendar month, never changes with navigation arrows
+// Commitments paid state always uses realMonth so navigation doesn't reset it
+const realMonth=currentMonth;
+function changeMonth(dir){const[y,m]=currentMonth.split('-').map(Number);const d=new Date(y,m-1+dir,1);currentMonth=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');renderAll();}
+
+/* ══ CONFIRM ══ */
+function showConfirm(title,msg,cb){
+  document.getElementById('csTitle').textContent=title;
+  document.getElementById('csMsg').textContent=msg;
+  document.getElementById('csOkBtn').onclick=()=>{closeConfirm();cb&&cb();};
+  document.getElementById('confirmOverlay').classList.add('open');
+}
+function closeConfirm(){document.getElementById('confirmOverlay').classList.remove('open');}
+document.getElementById('confirmOverlay').addEventListener('click',function(e){if(e.target===this)closeConfirm();});
+
+/* ══ NAV ══ */
+function switchTab(id){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  document.getElementById('nav-'+id)?.classList.add('active');
+  if(id==='wallets')renderWalletPanel();
+  if(id==='report'){renderReport();}
+  if(id==='all')renderAllList();
+  if(id==='commitments')renderAll();
+  if(id==='subs')renderSubs();
+  window.scrollTo(0,0);
+}
+
+/* ══ SALARY ══ */
+function saveSalary(){
+  const v=parseFloat(document.getElementById('salaryInput').value)||0;
+  const key=getCtxWid()||'__default';
+  S.salaries[key]=v;save();renderAll();
+}
+
+/* ══ CATEGORY ══ */
+function selectTag(t){
+  selectedTag=t;
+  document.querySelectorAll('.tag[id^="tag-"]').forEach(el=>el.classList.remove('sel'));
+  document.getElementById('tag-'+t)?.classList.add('sel');
+}
+
+/* ══ ADD EXPENSE ══ */
+function addExpense(){
+  const name=document.getElementById('expName').value.trim();
+  const amount=parseFloat(document.getElementById('expAmount').value)||0;
+  const date=document.getElementById('expDate').value||currentMonth+'-01';
+  const desc=document.getElementById('expDesc').value.trim();
+  if(!name||!amount)return;
+  const cat=selectedTag;
+  const icon=autoIcon(name,desc);
+  const wid=getCtxWid();
+  const addedAt=new Date().toISOString();
+  S.expenses.push({id:Date.now(),name,amount,date,desc,cat,icon,aiNote:'',walletId:wid,addedAt});
+  save();
+  ['expName','expAmount','expDesc'].forEach(id=>{document.getElementById(id).value='';});
+  document.getElementById('expDate').value=nowD.toISOString().split('T')[0];
+  selectTag('housing');
+  renderAll();
+  // تأثير بصري: الزر يتحول للأخضر لثانية ويبقى في نفس الصفحة
+  const btn=document.querySelector('[onclick="addExpense()"]');
+  if(btn){const orig=btn.innerHTML;btn.innerHTML='✅ تمت الإضافة';btn.style.background='#059669';setTimeout(()=>{btn.innerHTML=orig;btn.style.background='';},1300);}
+  document.getElementById('expName').focus();
+}
+
+function deleteExpense(id){
+  const e=S.expenses.find(x=>x.id===id);
+  showConfirm('حذف المصروف',`"${e?.name}" — ${fmt(e?.amount||0)} ر.س`,()=>{S.expenses=S.expenses.filter(x=>x.id!==id);save();renderAll();});
+}
+
+/* ══ COMMITMENTS — scoped to active context ══ */
+function getActiveCommits(){
+  const wid=getCtxWid();
+  if(!wid) return S.commitments.filter(c=>!c.walletId);
+  return S.commitments.filter(c=>String(c.walletId)===String(wid));
+}
+
+function addCommitment(){
+  const n=document.getElementById('cName').value.trim();
+  const a=parseFloat(document.getElementById('cAmount').value)||0;
+  if(!n||!a)return;
+  const wid=getCtxWid();
+  S.commitments.push({id:Date.now(),name:n,amount:a,walletId:wid||null});
+  save();
+  document.getElementById('cName').value='';document.getElementById('cAmount').value='';
+  renderAll();
+}
+function deleteCommitment(id){
+  const c=S.commitments.find(c=>c.id===id);
+  showConfirm('حذف الالتزام',`"${c?.name}" — ${fmt(c?.amount||0)} ر.س/شهر`,()=>{S.commitments=S.commitments.filter(c=>c.id!==id);save();renderAll();});
+}
+function confirmDeleteAllCommits(){
+  showConfirm('حذف جميع الالتزامات','سيتم حذف التزامات هذه المحفظة نهائياً.',()=>{
+    const wid=getCtxWid();
+    if(!wid) S.commitments=S.commitments.filter(c=>c.walletId);
+    else S.commitments=S.commitments.filter(c=>c.walletId!==wid);
+    save();renderAll();
+  });
+}
+function paidKey(id){
+  // Use currentMonth (the displayed month) so each month is independent
+  return String(id)+'_'+currentMonth;
+}
+function togglePaid(id){
+  if(!S.paid)S.paid={};
+  const k=paidKey(id);
+  S.paid[k]=!S.paid[k];
+  save();
+  const btn=document.querySelector('[data-pay="'+id+'"]');
+  if(btn){btn.classList.remove('popping');void btn.offsetWidth;btn.classList.add('popping');setTimeout(()=>btn.classList.remove('popping'),400);}
+  renderAll();
+}
+function isPaid(id){
+  if(!S.paid)return false;
+  return S.paid[paidKey(id)]===true;
+}
+function toggleEditCommit(id){editingCommit=editingCommit===id?null:id;renderAll();}
+function saveEditCommit(id){
+  const c=S.commitments.find(c=>String(c.id)===String(id));if(!c)return;
+  const n=document.getElementById('ec-name-'+id)?.value.trim();
+  const a=parseFloat(document.getElementById('ec-amt-'+id)?.value)||0;
+  if(n)c.name=n;if(a)c.amount=a;editingCommit=null;save();renderAll();
+}
+
+/* ══ SUBSCRIPTIONS — scoped ══ */
+function getActiveSubs(){
+  const wid=getCtxWid();
+  if(!wid) return S.subs.filter(s=>!s.walletId);
+  return S.subs.filter(s=>s.walletId===wid);
+}
+function selectSubIcon(el){
+  document.querySelectorAll('#sub-icon-row .tag').forEach(e=>e.classList.remove('sel'));
+  el.classList.add('sel');selectedSubIcon=el.dataset.icon;
+}
+document.getElementById('subDuration').addEventListener('change',function(){
+  document.getElementById('subCustomDaysField').style.display=this.value==='custom'?'':'none';
+});
+function addSub(){
+  const name=document.getElementById('subName').value.trim();
+  const amount=parseFloat(document.getElementById('subAmount').value)||0;
+  const start=document.getElementById('subStart').value;
+  const durSel=document.getElementById('subDuration').value;
+  let duration=durSel==='custom'?parseInt(document.getElementById('subCustomDays').value)||30:parseInt(durSel);
+  if(!name||!start){alert('أدخل الاسم وتاريخ البدء');return;}
+  const wid=getCtxWid();
+  S.subs.push({id:Date.now(),name,amount,start,duration,icon:selectedSubIcon,walletId:wid||null});
+  save();
+  ['subName','subAmount','subCustomDays'].forEach(id=>{document.getElementById(id).value='';});
+  document.getElementById('subStart').value=nowD.toISOString().split('T')[0];
+  document.getElementById('subDuration').value='30';
+  document.getElementById('subCustomDaysField').style.display='none';
+  renderSubs();
+}
+function deleteSub(id){
+  const s=S.subs.find(x=>x.id===id);
+  showConfirm('حذف الاشتراك',`"${s?.name}"`,()=>{S.subs=S.subs.filter(x=>x.id!==id);save();renderSubs();});
+}
+function toggleEditSub(id){editingSub=editingSub===id?null:id;renderSubs();}
+function saveEditSub(id){
+  const s=S.subs.find(x=>x.id===id);if(!s)return;
+  const n=document.getElementById('se-name-'+id)?.value.trim();
+  const a=parseFloat(document.getElementById('se-amt-'+id)?.value)||0;
+  const st=document.getElementById('se-start-'+id)?.value;
+  const dur=parseInt(document.getElementById('se-dur-'+id)?.value)||s.duration;
+  if(n)s.name=n;if(a)s.amount=a;if(st)s.start=st;s.duration=dur;
+  editingSub=null;save();renderSubs();renderAll();
+}
+function renewSub(id){
+  const s=S.subs.find(x=>x.id===id);if(!s)return;
+  s.start=new Date().toISOString().split('T')[0];save();renderSubs();renderAll();
+}
+function getDaysLeft(start,duration){
+  const end=new Date(start);end.setDate(end.getDate()+duration);
+  const today=new Date();today.setHours(0,0,0,0);
+  return Math.ceil((end-today)/(864e5));
+}
+function renderSubs(){
+  const list=document.getElementById('subList');
+  const statsEl=document.getElementById('sub-stats');
+  const subs=getActiveSubs();
+  if(!subs.length){list.innerHTML='<div class="empty-state"><div class="e-icon">📡</div><p>لا توجد اشتراكات لهذه المحفظة</p></div>';statsEl.style.display='none';return;}
+  statsEl.style.display='';
+  const totalM=subs.reduce((a,s)=>a+(s.amount||0),0);
+  document.getElementById('sub-monthly').textContent=fmt(totalM)+' ر.س';
+  document.getElementById('sub-yearly').textContent=fmt(totalM*12)+' ر.س';
+  const sorted=[...subs].sort((a,b)=>getDaysLeft(a.start,a.duration)-getDaysLeft(b.start,b.duration));
+  list.innerHTML=sorted.map(s=>{
+    const dl=getDaysLeft(s.start,s.duration);
+    const elapsed=Math.max(0,s.duration-dl);
+    const pct=Math.min(100,Math.round((elapsed/s.duration)*100));
+    let bc='dok',bt='';
+    if(dl<=0){bc='dexp';bt='منتهي';}
+    else if(dl<=3){bc='dcrit';bt=`${dl} أيام — قريب الانتهاء!`;}
+    else if(dl<=7){bc='dwarn';bt=`${dl} أيام متبقية`;}
+    else{bc='dok';bt=`${dl} يوماً متبقياً`;}
+    const endD=new Date(s.start);endD.setDate(endD.getDate()+s.duration);
+    const endStr=endD.toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'});
+    const borderColor=dl<=3?'var(--red)':dl<=7?'var(--yellow)':'var(--green)';
+    const progColor=dl<=3?'var(--red)':dl<=7?'var(--yellow)':'var(--green)';
+    return `<div class="sub-item-wrap" style="margin-bottom:8px;border-radius:13px;overflow:hidden;border:1px solid ${borderColor};border-right:3px solid ${borderColor}">
+    <div class="sub-item" style="border:none;border-radius:0;margin-bottom:0">
+      <div class="sub-icon-box">${s.icon||'📡'}</div>
+      <div class="sub-info">
+        <div class="sub-name">${s.name}</div>
+        <div class="sub-detail">ينتهي ${endStr}</div>
+        <div class="sub-prog-wrap">
+          <div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:${progColor}"></div></div>
+          <div class="sub-prog-lbl">${pct}% من المدة مضت</div>
+        </div>
+      </div>
+      <div class="sub-right">
+        <div class="sub-amt">${fmt(s.amount)} ر.س</div>
+        <div><span class="days-badge ${bc}">${bt}</span></div>
+        <div class="sub-actions">
+          ${dl<=7?`<button class="btn-icon" onclick="renewSub(${s.id})" title="تجديد">🔄</button>`:''}
+          <button class="btn-icon" onclick="toggleEditSub(${s.id})" title="تعديل">✏️</button>
+          <button class="btn-icon" onclick="deleteSub(${s.id})">🗑</button>
+        </div>
+      </div>
+    </div>
+    <div class="edit-row${editingSub===s.id?' show':''}" id="sub-edit-${s.id}" style="flex-direction:column;gap:7px;margin:0;padding:10px 12px;border-top:1px solid var(--border);box-sizing:border-box;width:100%">
+      <div style="display:flex;gap:7px;width:100%">
+        <div style="flex:1;min-width:0"><label style="font-size:.63rem;color:var(--muted);display:block;margin-bottom:3px">الاسم</label>
+          <input class="edit-inp" id="se-name-${s.id}" type="text" value="${s.name}" style="width:100%;box-sizing:border-box">
+        </div>
+        <div style="flex:1;min-width:0"><label style="font-size:.63rem;color:var(--muted);display:block;margin-bottom:3px">المبلغ</label>
+          <input class="edit-inp" id="se-amt-${s.id}" type="number" value="${s.amount}" inputmode="decimal" style="width:100%;box-sizing:border-box;direction:ltr;text-align:right">
+        </div>
+      </div>
+      <div style="display:flex;gap:7px;width:100%">
+        <div style="flex:1;min-width:0"><label style="font-size:.63rem;color:var(--muted);display:block;margin-bottom:3px">تاريخ البدء</label>
+          <input class="edit-inp" id="se-start-${s.id}" type="date" value="${s.start}" style="width:100%;box-sizing:border-box;font-size:.75rem">
+        </div>
+        <div style="width:90px;flex-shrink:0"><label style="font-size:.63rem;color:var(--muted);display:block;margin-bottom:3px">المدة (يوم)</label>
+          <input class="edit-inp" id="se-dur-${s.id}" type="number" value="${s.duration}" inputmode="numeric" style="width:100%;box-sizing:border-box">
+        </div>
+      </div>
+      <div style="display:flex;gap:7px;width:100%">
+        <button class="btn-es" style="flex:1" onclick="saveEditSub(${s.id})">✓ حفظ</button>
+        <button class="btn-ec" onclick="toggleEditSub(${s.id})">✕ إلغاء</button>
+      </div>
+    </div>
+  </div>`;
+  }).join('');
+}
+
+/* ══ RENDER ALL ══ */
+function renderAll(){
+  const months=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  const[y,m]=currentMonth.split('-').map(Number);
+  const label=months[m-1]+' '+y;
+  ['monthBadge','currentMonthLabel','allMonthLabel'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=label;});
+
+  updatePill();
+  updateCtxBanners();
+
+  const wid=getCtxWid();
+  const salary=getCtxSalary();
+  document.getElementById('salaryInput').placeholder=salary||'0.00';
+  document.getElementById('salaryCardLabel').textContent=wid?'دخل المحفظة':'الراتب الشهري';
+
+  // Expenses for this context
+  const monthExp=S.expenses.filter(e=>{
+    if(!e.date||!e.date.startsWith(currentMonth))return false;
+    if(!wid) return !e.walletId; // free mode: show only unattached
+    return e.walletId===wid;
+  });
+  const totalExp=monthExp.reduce((a,e)=>a+e.amount,0);
+
+  // Commitments for this context
+  const activeCommits=getActiveCommits();
+  const totalCom=activeCommits.reduce((a,c)=>a+c.amount,0);
+  // Subscriptions for this context
+  const totalSubs=getActiveSubs().reduce((a,s)=>a+(s.amount||0),0);
+  const left=salary-totalExp-totalCom-totalSubs;
+
+  document.getElementById('s-salary').textContent=fmt(salary)+' ر.س';
+  document.getElementById('s-spent').textContent=fmt(totalExp)+' ر.س';
+  document.getElementById('s-commits').textContent=fmt(totalCom)+' ر.س';
+  document.getElementById('s-subs').textContent=fmt(totalSubs)+' ر.س';
+  document.getElementById('s-left').textContent=fmt(left)+' ر.س';
+  document.getElementById('s-left').className='sum-value '+(left>=0?'vg':'vr');
+  const pct=salary>0?Math.min(100,Math.round((totalExp+totalCom+totalSubs)/salary*100)):0;
+  document.getElementById('prog').style.width=pct+'%';
+  document.getElementById('prog-pct').textContent=pct+'%';
+
+  // Commit summary
+  const paidComs=activeCommits.filter(c=>isPaid(c.id));
+  const paidAmt=paidComs.reduce((a,c)=>a+c.amount,0);
+  const remainAmt=totalCom-paidAmt;
+  const paidPct=totalCom>0?Math.min(100,Math.round((paidAmt/totalCom)*100)):0;
+  const setCSB=(p,sfx)=>{
+    const el=id=>document.getElementById(p+id);
+    if(!el('total'))return;
+    el('total').textContent=fmt(totalCom)+(sfx?' ر.س':'');
+    el('paid').textContent=fmt(paidAmt)+(sfx?' ر.س':'');
+    el('remain').textContent=fmt(remainAmt)+(sfx?' ر.س':'');
+    el('fill').style.width=paidPct+'%';
+    el('pct').textContent=paidPct+'% مسدّد';
+  };
+  setCSB('csb-',false);setCSB('cp-',true);
+
+  // Recent
+  const recent=[...monthExp].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,5);
+  document.getElementById('recentList').innerHTML=recent.length?recent.map(expHtml).join(''):'<div class="empty-state"><div class="e-icon">✨</div><p>لا توجد مصروفات هذا الشهر</p></div>';
+
+  // Commit list
+  const renderC=c=>{
+    const p=isPaid(c.id);const ed=editingCommit===c.id;
+    return `<div class="commit-item${p?' paid':''}">
+      <div class="ci-icon">${autoIcon(c.name)}</div>
+      <div class="ci-body" onclick="toggleEditCommit(${c.id})">
+        <div class="ci-name">${c.name}</div>
+        <div class="ci-amt">${p?'<span class="paid-chk">✓</span> مسدد — ':''}${c.amount.toLocaleString('en-US')} ر.س/شهر</div>
+        <div class="edit-row${ed?' show':''}">
+          <input class="edit-inp" id="ec-name-${c.id}" type="text" value="${c.name}" onclick="event.stopPropagation()">
+          <input class="edit-inp" id="ec-amt-${c.id}" type="number" value="${c.amount}" style="direction:ltr;width:75px" onclick="event.stopPropagation()">
+          <button class="btn-es" onclick="event.stopPropagation();saveEditCommit(${c.id})">✓</button>
+          <button class="btn-ec" onclick="event.stopPropagation();toggleEditCommit(${c.id})">✕</button>
+        </div>
+      </div>
+      <div class="ci-actions">
+        <button class="btn-pay${p?' paid':''}" data-pay="${c.id}" onclick="togglePaid(${c.id})">${p?'<span class="paid-chk">✓</span> مسدد':'سدّد'}</button>
+        <button class="btn-del" onclick="deleteCommitment(${c.id})">🗑</button>
+      </div>
+    </div>`;
+  };
+  const unpaid=activeCommits.filter(c=>!isPaid(c.id));
+  const paid=activeCommits.filter(c=>isPaid(c.id));
+  document.getElementById('commitList').innerHTML=[...unpaid,...paid].map(renderC).join('')||'<div class="empty-state"><div class="e-icon">🔗</div><p>لا توجد التزامات لهذه المحفظة<br><span style="font-size:.72rem;opacity:.6">أضف التزاماً من النموذج أعلاه</span></p></div>';
+
+  if(document.getElementById('panel-all').classList.contains('active'))renderAllList();
+  if(document.getElementById('panel-report').classList.contains('active'))renderReport();
+}
+
+function setFilter(f,el){activeFilter=f;document.querySelectorAll('.ftag').forEach(e=>e.classList.remove('active'));el.classList.add('active');renderAllList();}
+function setView(v){activeView=v;document.getElementById('vbCards').classList.toggle('active',v==='cards');document.getElementById('vbTable').classList.toggle('active',v==='table');renderAllList();}
+function setSort(s,el){
+  activeSort=s;
+  document.querySelectorAll('.stag').forEach(e=>e.classList.remove('active'));
+  el.classList.add('active');
+  const dayRow=document.getElementById('day-filter-row');
+  const monthRow=document.getElementById('month-filter-row');
+  if(s==='day'){dayRow.classList.add('show');monthRow.classList.remove('show');}
+  else if(s==='month'){monthRow.classList.add('show');dayRow.classList.remove('show');}
+  else{dayRow.classList.remove('show');monthRow.classList.remove('show');}
+  renderAllList();
+}
+
+function renderAllList(){
+  const wid=getCtxWid();
+  let me=S.expenses.filter(e=>{
+    if(!e.date)return false;
+    if(!wid)return !e.walletId;
+    return e.walletId===wid;
+  });
+
+  // Determine active month for commitments/subs display
+  let logMonth=currentMonth;
+
+  // Day filter
+  if(activeSort==='day'){
+    const fd=document.getElementById('filterDay')?.value;
+    if(fd) me=me.filter(e=>e.date===fd);
+    else me=[];
+  } else if(activeSort==='month'){
+    const fm=document.getElementById('filterMonth')?.value;
+    if(fm){me=me.filter(e=>e.date.startsWith(fm));logMonth=fm;}
+    else me=[];
+  } else {
+    me=me.filter(e=>e.date.startsWith(currentMonth));
+  }
+
+  let expList=activeFilter==='all'?me:me.filter(e=>e.cat===activeFilter);
+
+  // Build unified log: expenses + commitments + subscriptions
+  const commitEntries = activeFilter==='all' ? getActiveCommits().map(c=>({
+    id:'c_'+c.id, name:c.name, amount:c.amount, date:logMonth+'-01',
+    addedAt:null, cat:'التزام', icon:autoIcon(c.name), _type:'commit',
+    _paid:isPaid(c.id)
+  })) : [];
+
+  // Subscriptions: add as log entries
+  const subEntries = activeFilter==='all' ? getActiveSubs().map(s=>({
+    id:'s_'+s.id, name:s.name, amount:s.amount, date:s.start,
+    addedAt:null, cat:'اشتراك', icon:s.icon||'📡', _type:'sub'
+  })) : [];
+
+  let list=[...expList.map(e=>({...e,_type:'expense'})), ...commitEntries, ...subEntries];
+
+  // Sort
+  if(activeSort==='newest'){
+    list=[...list].sort((a,b)=>{
+      const ta=a.addedAt||a.date;const tb=b.addedAt||b.date;
+      return new Date(tb)-new Date(ta);
+    });
+  } else if(activeSort==='oldest'){
+    list=[...list].sort((a,b)=>{
+      const ta=a.addedAt||a.date;const tb=b.addedAt||b.date;
+      return new Date(ta)-new Date(tb);
+    });
+  } else if(activeSort==='highest'){
+    list=[...list].sort((a,b)=>b.amount-a.amount);
+  } else if(activeSort==='lowest'){
+    list=[...list].sort((a,b)=>a.amount-b.amount);
+  } else if(activeSort==='day'){
+    list=[...list].sort((a,b)=>{
+      const ta=a.addedAt||a.date;const tb=b.addedAt||b.date;
+      return new Date(tb)-new Date(ta);
+    });
+  }
+
+  const el=document.getElementById('allList');
+  if(!list.length){el.innerHTML='<div class="empty-state"><div class="e-icon">📋</div><p>لا توجد سجلات</p></div>';return;}
+
+  function logItemHtml(e){
+    let typeBadge='';
+    let amtColor='var(--red)';
+    let deleteBtn=`<button class="btn-del" onclick="deleteExpense(${e.id})" style="display:block;margin-top:2px">🗑</button>`;
+    if(e._type==='commit'){
+      typeBadge=`<span style="display:inline-block;font-size:.53rem;padding:2px 6px;border-radius:99px;font-weight:600;background:rgba(108,99,255,.15);color:var(--accent);margin-right:3px">🔗 التزام</span>`;
+      amtColor=e._paid?'var(--green)':'var(--yellow)';
+      deleteBtn='';
+    } else if(e._type==='sub'){
+      typeBadge=`<span style="display:inline-block;font-size:.53rem;padding:2px 6px;border-radius:99px;font-weight:600;background:rgba(45,212,191,.12);color:var(--green);margin-right:3px">📡 اشتراك</span>`;
+      amtColor='var(--accent)';
+      deleteBtn='';
+    } else {
+      typeBadge=catBadge(e.cat);
+    }
+    const paidNote=e._type==='commit'?(e._paid?'<div style="font-size:.65rem;color:var(--green);margin-top:2px">✓ مسدّد</div>':'<div style="font-size:.65rem;color:var(--yellow);margin-top:2px">⏳ غير مسدّد</div>'):'';
+    return `<div class="exp-item">
+      <div class="exp-emoji">${e.icon||'💰'}</div>
+      <div class="exp-body">
+        <div class="exp-name">${e.name} ${typeBadge}</div>
+        ${e.desc?`<div class="exp-desc">${e.desc}</div>`:''}
+        ${paidNote}
+      </div>
+      <div class="exp-right">
+        <div class="exp-amt" style="color:${amtColor}">${e.amount.toLocaleString('en-US')} ر.س</div>
+        <div class="exp-date">${e._type==='expense'?formatDateTime(e):e.date||''}</div>
+        ${deleteBtn}
+      </div>
+    </div>`;
+  }
+
+  if(activeView==='table'){
+    el.innerHTML=`<div class="table-wrap"><table><thead><tr><th>#</th><th>الاسم</th><th>المبلغ</th><th>النوع</th><th>التاريخ</th><th></th></tr></thead><tbody>${list.map((e,i)=>`<tr>
+      <td style="color:var(--muted)">${i+1}</td><td>${e.icon||'💰'} ${e.name}</td>
+      <td class="tbl-amt" style="color:${e._type==='commit'?(e._paid?'var(--green)':'var(--yellow)'):e._type==='sub'?'var(--accent)':'var(--red)'}">${e.amount.toLocaleString('en-US')} ر.س</td>
+      <td>${e._type==='commit'?`<span class="cat-badge" style="background:rgba(16,185,129,.12);color:var(--accent)">🔗 التزام</span>`:e._type==='sub'?`<span class="cat-badge" style="background:rgba(45,212,191,.12);color:var(--green)">📡 اشتراك</span>`:catBadge(e.cat)}</td>
+      <td class="tbl-date">${e._type==='expense'?formatDateTime(e):e.date||''}</td>
+      <td>${e._type==='expense'?`<button class="btn-del" onclick="deleteExpense(${e.id})">🗑</button>`:''}</td>
+    </tr>`).join('')}</tbody></table></div><div style="text-align:center;font-size:.73rem;color:var(--muted);padding:4px 0">${list.length} سجل — ${fmt(list.reduce((a,e)=>a+e.amount,0))} ر.س</div>`;
+  } else {
+    el.innerHTML=list.map(logItemHtml).join('')+`<div style="text-align:center;font-size:.73rem;color:var(--muted);padding:4px 0">${list.length} سجل — ${fmt(list.reduce((a,e)=>a+e.amount,0))} ر.س</div>`;
+  }
+}
+
+function formatDateTime(e){
+  if(e.addedAt){
+    const d=new Date(e.addedAt);
+    const date=d.toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'});
+    const time=d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+    return date+' • '+time;
+  }
+  return e.date||'';
+}
+
+function expHtml(e){
+  const icon=e.icon||autoIcon(e.name,e.desc||'');
+  return `<div class="exp-item">
+    <div class="exp-emoji">${icon}</div>
+    <div class="exp-body">
+      <div class="exp-name">${e.name} ${catBadge(e.cat)}</div>
+      ${e.desc?`<div class="exp-desc">${e.desc}</div>`:''}
+      ${e.aiNote?`<div class="exp-ai">🤖 ${e.aiNote}</div>`:''}
+    </div>
+    <div class="exp-right">
+      <div class="exp-amt">${e.amount.toLocaleString('en-US')} ر.س</div>
+      <div class="exp-date">${formatDateTime(e)}</div>
+      <button class="btn-del" onclick="deleteExpense(${e.id})" style="display:block;margin-top:2px">🗑</button>
+    </div>
+  </div>`;
+}
+
+/* ══ CHARTS ══ */
+function renderReport(){
+  try{
+    const _rp=document.getElementById('panel-report');
+    if(!_rp||!_rp.classList.contains('active'))return;
+    updateCtxBanners();
+    const wid=getCtxWid();
+    const me=S.expenses.filter(e=>{
+      if(!e.date||!e.date.startsWith(currentMonth))return false;
+      if(!wid)return !e.walletId;return e.walletId===wid;
+    });
+    const catKeys=Object.keys(CATS);
+    const catColors=['#c8874a','#f87171','#60a5fa','#4ade80','#c084fc','#fbbf24','#f472b6','#facc15','#d4a843','#94a3b8'];
+    const totals=catKeys.map(c=>me.filter(e=>e.cat===c).reduce((a,e)=>a+e.amount,0));
+    const comAmt=getActiveCommits().reduce((a,c)=>a+c.amount,0);
+    const grand=Math.max([...totals,comAmt].reduce((a,b)=>a+b,0),1);
+    document.getElementById('report-bars').innerHTML=[
+      ...catKeys.map((c,i)=>totals[i]>0?`<div class="donut-row">
+        <div class="donut-lbl" style="color:${catColors[i]}">${CATS[c].icon} ${CATS[c].name}</div>
+        <div class="donut-bar"><div class="donut-fill" style="width:${(totals[i]/grand*100).toFixed(0)}%;background:${catColors[i]}"></div></div>
+        <div class="donut-val" style="color:${catColors[i]}">${fmt(totals[i])} ر.س</div>
+      </div>`:'').filter(Boolean),
+      `<div class="donut-row">
+        <div class="donut-lbl" style="color:var(--accent)">🔗 التزامات</div>
+        <div class="donut-bar"><div class="donut-fill" style="width:${(comAmt/grand*100).toFixed(0)}%;background:var(--accent)"></div></div>
+        <div class="donut-val" style="color:var(--accent)">${fmt(comAmt)} ر.س</div>
+      </div>`
+    ].join('');
+    // Only show categories with spending in chart
+    const activeIdxs=catKeys.map((c,i)=>totals[i]>0?i:-1).filter(i=>i>=0);
+    const chartVals=[...activeIdxs.map(i=>totals[i]),comAmt];
+    const chartColors=[...activeIdxs.map(i=>catColors[i]),'#10b981'];
+    const chartLabels=[...activeIdxs.map(i=>CATS[catKeys[i]].icon+' '+CATS[catKeys[i]].name.split('و')[0].trim()),  'التزامات'];
+    drawBarChart('reportChart',chartVals,chartColors,chartLabels);
+    drawDailyChart();
+    drawMonthlyChart();
+  }catch(e){console.warn('renderReport error',e);}
+}
+
+/* ── safe canvas setup: returns {ctx,W,H,cW,cH} or null if not ready ── */
+function setupCanvas(id, fixedH){
+  const canvas=document.getElementById(id);
+  if(!canvas)return null;
+  // measure from the wrapping report-section, not the canvas itself
+  const wrap=canvas.closest('.report-section');
+  const rawW=wrap?wrap.clientWidth:canvas.parentElement?.clientWidth||0;
+  const W=Math.max(rawW-24, 200); // 24 = padding
+  const H=fixedH;
+  if(W<=0||H<=0)return null;
+  const dpr=Math.min(window.devicePixelRatio||1, 3); // cap at 3x to avoid OOM
+  // only resize if dimensions actually changed (avoids redundant scale stacking)
+  if(canvas._setupW!==W||canvas._setupH!==H||canvas._setupDpr!==dpr){
+    canvas.width=Math.round(W*dpr);
+    canvas.height=Math.round(H*dpr);
+    canvas.style.width=W+'px';
+    canvas.style.height=H+'px';
+    canvas._setupW=W;canvas._setupH=H;canvas._setupDpr=dpr;
+  }
+  const ctx=canvas.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0); // reset transform to avoid stacking scale()
+  ctx.clearRect(0,0,W,H);
+  return {ctx,W,H,dpr};
+}
+
+function drawBarChart(id,data,colors,labels){
+  const s=setupCanvas(id,175);if(!s)return;
+  const{ctx,W,H}=s;
+  const maxV=Math.max(...data,1);const n=data.length;
+  const pad={t:18,r:8,b:26,l:38};
+  const cW=W-pad.l-pad.r;const cH=H-pad.t-pad.b;
+  if(cW<=0||cH<=0)return;
+  const bw=Math.min(44,cW/n*0.58);const gap=cW/n;
+  ctx.save();
+  [.25,.5,.75,1].forEach(p=>{
+    const yy=pad.t+cH*(1-p);
+    ctx.strokeStyle='rgba(255,255,255,.05)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(pad.l,yy);ctx.lineTo(W-pad.r,yy);ctx.stroke();
+    ctx.fillStyle='rgba(123,127,148,.5)';ctx.font='9px Tahoma,Arial';
+    ctx.textAlign='right';ctx.fillText(fmt(maxV*p),pad.l-3,yy+3);
+  });
+  data.forEach((v,i)=>{
+    const x=pad.l+i*gap+(gap-bw)/2;
+    const bh=Math.max(2,(v/maxV)*cH);const yy=pad.t+cH-bh;
+    ctx.globalAlpha=.88;ctx.fillStyle=colors[i];
+    ctx.beginPath();
+    if(ctx.roundRect)ctx.roundRect(x,yy,bw,bh,4);else ctx.rect(x,yy,bw,bh);
+    ctx.fill();ctx.globalAlpha=1;
+    if(v>0){
+      ctx.fillStyle='#fff';ctx.font='bold 8px Tahoma,Arial';
+      ctx.textAlign='center';ctx.fillText(fmt(v),x+bw/2,yy-4);
+    }
+  });
+  ctx.fillStyle='rgba(123,127,148,.75)';ctx.font='9px Tahoma,Arial';ctx.textAlign='center';
+  labels.forEach((l,i)=>ctx.fillText(l,pad.l+i*gap+gap/2,H-pad.b+14));
+  ctx.restore();
+}
+
+function drawDailyChart(){
+  const s=setupCanvas('dailyChart',155);if(!s)return;
+  const{ctx,W,H}=s;
+  const wid=getCtxWid();
+  const me=S.expenses.filter(e=>{
+    if(!e.date||!e.date.startsWith(currentMonth))return false;
+    if(!wid)return !e.walletId;return e.walletId===wid;
+  });
+  const dayMap={};
+  me.forEach(e=>{const d=(e.date||'').split('T')[0];if(d)dayMap[d]=(dayMap[d]||0)+e.amount;});
+  const[y,m]=currentMonth.split('-').map(Number);
+  const dim=new Date(y,m,0).getDate();
+  const labels=[];const data=[];
+  for(let d=1;d<=dim;d++){
+    const k=`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    labels.push(String(d));data.push(dayMap[k]||0);
+  }
+  const maxV=Math.max(...data,1);const n=data.length;
+  const pad={t:10,r:6,b:20,l:36};
+  const cW=W-pad.l-pad.r;const cH=H-pad.t-pad.b;
+  if(cW<=0||cH<=0)return;
+  const bw=Math.max(2,cW/n*0.55);const gap=cW/n;
+  ctx.save();
+  [.25,.5,.75,1].forEach(p=>{
+    const yy=pad.t+cH*(1-p);
+    ctx.strokeStyle='rgba(255,255,255,.04)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(pad.l,yy);ctx.lineTo(W-pad.r,yy);ctx.stroke();
+    ctx.fillStyle='rgba(123,127,148,.45)';ctx.font='8px Tahoma,Arial';
+    ctx.textAlign='right';ctx.fillText(fmt(maxV*p),pad.l-2,yy+3);
+  });
+  data.forEach((v,i)=>{
+    if(!v)return;
+    const x=pad.l+i*gap+(gap-bw)/2;
+    const bh=Math.max(2,(v/maxV)*cH);const yy=pad.t+cH-bh;
+    ctx.fillStyle='rgba(108,99,255,.75)';
+    ctx.beginPath();
+    if(ctx.roundRect)ctx.roundRect(x,yy,bw,bh,2);else ctx.rect(x,yy,bw,bh);
+    ctx.fill();
+  });
+  ctx.fillStyle='rgba(123,127,148,.65)';ctx.font='8px Tahoma,Arial';ctx.textAlign='center';
+  labels.forEach((l,i)=>{
+    if((i+1)%5===0||(i+1)===1||(i+1)===dim)
+      ctx.fillText(l,pad.l+i*gap+gap/2,H-3);
+  });
+  ctx.restore();
+}
+
+function drawMonthlyChart(){
+  const s=setupCanvas('monthlyChart',155);if(!s)return;
+  const{ctx,W,H}=s;
+  const wid=getCtxWid();
+  const[y,m]=currentMonth.split('-').map(Number);
+  const mNames=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  const labels=[];const data=[];
+  for(let i=5;i>=0;i--){
+    const d=new Date(y,m-1-i,1);
+    const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    const total=S.expenses.filter(e=>{
+      if(!e.date||!e.date.startsWith(key))return false;
+      if(!wid)return !e.walletId;return e.walletId===wid;
+    }).reduce((a,e)=>a+e.amount,0);
+    labels.push(mNames[d.getMonth()].slice(0,3));data.push(total);
+  }
+  const maxV=Math.max(...data,1);const n=data.length;
+  const pad={t:12,r:8,b:20,l:36};
+  const cW=W-pad.l-pad.r;const cH=H-pad.t-pad.b;
+  if(cW<=0||cH<=0)return;
+  const gap=cW/n;
+  ctx.save();
+  [.25,.5,.75,1].forEach(p=>{
+    const yy=pad.t+cH*(1-p);
+    ctx.strokeStyle='rgba(255,255,255,.04)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(pad.l,yy);ctx.lineTo(W-pad.r,yy);ctx.stroke();
+    ctx.fillStyle='rgba(123,127,148,.45)';ctx.font='8px Tahoma,Arial';
+    ctx.textAlign='right';ctx.fillText(fmt(maxV*p),pad.l-2,yy+3);
+  });
+  const pts=data.map((v,i)=>({x:pad.l+i*gap+gap/2,y:pad.t+cH-(v/maxV)*cH}));
+  if(pts.length>1){
+    // fill area
+    const grad=ctx.createLinearGradient(0,pad.t,0,pad.t+cH);
+    grad.addColorStop(0,'rgba(108,99,255,.4)');grad.addColorStop(1,'rgba(108,99,255,0)');
+    ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);
+    pts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));
+    ctx.lineTo(pts[pts.length-1].x,pad.t+cH);ctx.lineTo(pts[0].x,pad.t+cH);
+    ctx.closePath();ctx.fillStyle=grad;ctx.fill();
+    // line
+    ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);
+    pts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));
+    ctx.strokeStyle='rgba(108,99,255,.9)';ctx.lineWidth=2;ctx.lineJoin='round';ctx.stroke();
+    // dots + labels
+    pts.forEach((p,i)=>{
+      ctx.beginPath();ctx.arc(p.x,p.y,3,0,Math.PI*2);ctx.fillStyle='#6c63ff';ctx.fill();
+      if(data[i]>0){
+        ctx.fillStyle='rgba(255,255,255,.75)';ctx.font='bold 8px Tahoma';
+        ctx.textAlign='center';ctx.fillText(fmt(data[i]),p.x,p.y-8);
+      }
+    });
+  }
+  ctx.fillStyle='rgba(123,127,148,.75)';ctx.font='9px Tahoma,Arial';ctx.textAlign='center';
+  labels.forEach((l,i)=>ctx.fillText(l,pad.l+i*gap+gap/2,H-3));
+  ctx.restore();
+}
+
+/* ══ WALLET FUNCTIONS ══ */
+function toggleSec(sid,iid){const s=document.getElementById(sid);const ic=document.getElementById(iid);const o=s.classList.toggle('show');ic.classList.toggle('open',o);}
+function selectColor(el){document.querySelectorAll('#color-picker .cswatch').forEach(s=>s.classList.remove('selected'));el.classList.add('selected');ws.selectedColor=el.dataset.color;}
+function toggleBMethod(){const m=document.getElementById('b-method').value;document.getElementById('b-pct-g').style.display=m==='percent'?'':'none';document.getElementById('b-fix-g').style.display=m==='fixed'?'':'none';}
+function toggleEBMethod(){const m=document.getElementById('eb-method').value;document.getElementById('eb-pct-g').style.display=m==='percent'?'':'none';document.getElementById('eb-fix-g').style.display=m==='fixed'?'':'none';}
+
+function addWallet(){
+  const name=document.getElementById('w-name').value.trim();if(!name){alert('أدخل اسم المحفظة');return;}
+  const type=document.getElementById('w-type').value;
+  const balance=parseFloat(document.getElementById('w-balance').value)||0;
+  const desc=document.getElementById('w-desc').value.trim();
+  const w={id:Date.now().toString(),name,type,balance,desc};
+  ws.wallets.push(w);saveWs();
+  ['w-name','w-balance','w-desc'].forEach(id=>{document.getElementById(id).value='';});
+  toggleSec('add-wallet-sec','at-w');
+  renderAll();renderWalletPanel();
+}
+function deleteWallet(id){
+  const w=ws.wallets.find(w=>w.id===id);
+  showConfirm('حذف المحفظة',`"${w?.name}"`,()=>{
+    ws.wallets=ws.wallets.filter(w=>w.id!==id);
+    if(activeCtx===id)activeCtx='__free';
+    saveWs();renderAll();renderWalletPanel();
+  });
+}
+function editWallet(id){
+  const w=ws.wallets.find(w=>w.id===id);if(!w)return;
+  ws.editingWalletId=id;
+  document.getElementById('ew-name').value=w.name;
+  document.getElementById('ew-balance').value=w.balance;
+  document.getElementById('ew-desc').value=w.desc||'';
+  document.getElementById('edit-wallet-sec').classList.add('show');
+  document.getElementById('add-wallet-sec').classList.remove('show');
+  document.getElementById('at-w').classList.remove('open');
+  document.getElementById('edit-wallet-sec').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function saveEditWallet(){
+  const w=ws.wallets.find(w=>w.id===ws.editingWalletId);if(!w)return;
+  w.name=document.getElementById('ew-name').value.trim()||w.name;
+  w.balance=parseFloat(document.getElementById('ew-balance').value)||0;
+  w.desc=document.getElementById('ew-desc').value.trim();
+  saveWs();cancelEditWallet();renderAll();renderWalletPanel();
+}
+function cancelEditWallet(){ws.editingWalletId=null;document.getElementById('edit-wallet-sec').classList.remove('show');}
+
+function walletBalChange(id,sign){
+  const w=ws.wallets.find(w=>w.id===id);if(!w)return;
+  const v=prompt(sign>0?'المبلغ المراد إيداعه:':'المبلغ المراد سحبه:');if(v===null)return;
+  const amt=parseFloat(v)||0;if(!amt)return;
+  w.balance=Math.max(0,w.balance+sign*amt);saveWs();renderAll();renderWalletPanel();
+}
+
+function calcB(b,bal){return b.method==='percent'?Math.round((b.percent/100)*bal):(b.fixed||0);}
+function getTotalB(bal,wid){const bs=wid?ws.buckets.filter(b=>!b.walletId||b.walletId===wid):ws.buckets;return bs.reduce((s,b)=>s+calcB(b,bal),0);}
+
+function addBucket(){
+  const name=document.getElementById('b-name').value.trim();if(!name){alert('أدخل الاسم');return;}
+  const icon=document.getElementById('b-icon').value;
+  const method=document.getElementById('b-method').value;
+  const percent=parseFloat(document.getElementById('b-percent').value)||0;
+  const fixed=parseFloat(document.getElementById('b-fixed').value)||0;
+  const goal=parseFloat(document.getElementById('b-goal').value)||0;
+  if(method==='percent'&&percent<=0){alert('أدخل نسبة');return;}
+  if(method==='fixed'&&fixed<=0){alert('أدخل مبلغ');return;}
+  const wid=getCtxWid()||ws.wallets[0]?.id||null;
+  ws.buckets.push({id:Date.now().toString(),name,icon,method,percent,fixed,goal,color:ws.selectedColor,saved:0,walletId:wid});
+  saveWs();['b-name','b-percent','b-fixed','b-goal'].forEach(id=>{document.getElementById(id).value='';});
+  toggleSec('add-bucket-sec','at-b');renderWalletPanel();
+}
+function deleteBucket(id){
+  const b=ws.buckets.find(b=>b.id===id);
+  showConfirm('حذف البند',`"${b?.name}"`,()=>{ws.buckets=ws.buckets.filter(b=>b.id!==id);saveWs();renderWalletPanel();});
+}
+function editBucket(id){
+  const b=ws.buckets.find(b=>b.id===id);if(!b)return;
+  ws.editingBucketId=id;
+  document.getElementById('eb-name').value=b.name;
+  document.getElementById('eb-method').value=b.method;
+  document.getElementById('eb-percent').value=b.percent||'';
+  document.getElementById('eb-fixed').value=b.fixed||'';
+  document.getElementById('eb-goal').value=b.goal||'';
+  document.getElementById('eb-saved').value=b.saved||'';
+  toggleEBMethod();
+  document.getElementById('edit-bucket-sec').classList.add('show');
+  document.getElementById('add-bucket-sec').classList.remove('show');
+  document.getElementById('at-b').classList.remove('open');
+  document.getElementById('edit-bucket-sec').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function saveEditBucket(){
+  const b=ws.buckets.find(b=>b.id===ws.editingBucketId);if(!b)return;
+  b.name=document.getElementById('eb-name').value.trim()||b.name;
+  b.method=document.getElementById('eb-method').value;
+  b.percent=parseFloat(document.getElementById('eb-percent').value)||0;
+  b.fixed=parseFloat(document.getElementById('eb-fixed').value)||0;
+  b.goal=parseFloat(document.getElementById('eb-goal').value)||0;
+  b.saved=parseFloat(document.getElementById('eb-saved').value)||0;
+  saveWs();cancelEditBucket();renderWalletPanel();
+}
+function cancelEditBucket(){ws.editingBucketId=null;document.getElementById('edit-bucket-sec').classList.remove('show');}
+
+function autoDistribute(){
+  const aw=ws.wallets.find(w=>w.id===activeCtx)||ws.wallets[0];
+  if(!aw||!aw.balance){alert('لا يوجد رصيد');return;}
+  const wid=aw.id;const rel=ws.buckets.filter(b=>!b.walletId||b.walletId===wid);
+  rel.forEach(b=>{b.saved=(b.saved||0)+calcB(b,aw.balance);});
+  saveWs();renderWalletPanel();
+}
+
+function renderWalletPanel(){
+  updatePill();
+  // Summary
+  const total=ws.wallets.reduce((s,w)=>s+(w.balance||0),0);
+  const activeW=ws.wallets.find(w=>w.id===activeCtx)||ws.wallets[0];
+  const activeBal=activeW?activeW.balance:0;const wid=activeW?activeW.id:null;
+  const totalAlloc=getTotalB(activeBal,wid);const free=activeBal-totalAlloc;
+  document.getElementById('wsp-total').textContent=fmt(total)+' ر.س';
+  document.getElementById('wsp-free').textContent=fmt(Math.max(0,free))+' ر.س';
+  const chips=document.getElementById('wsp-chips');
+  chips.innerHTML=ws.wallets.length?ws.wallets.map(wallet=>{
+    const meta=WI[wallet.type]||WI.other;const isA=wallet.id===activeCtx;
+    return `<div class="wsp-chip${isA?' active-chip':''}" onclick="setCtx('${wallet.id}')">
+      <span>${meta.icon}</span>
+      <div><div class="wsp-chip-name">${wallet.name}</div><div class="wsp-chip-bal">${fmt(wallet.balance)} ر.س</div></div>
+    </div>`;
+  }).join(''):'<div style="font-size:.72rem;color:var(--muted)">لا توجد محافظ بعد</div>';
+
+  // Dist chart
+  if(ws.buckets.length>0&&activeBal>0){
+    document.getElementById('wdist-card').style.display='';
+    const rel=ws.buckets.filter(b=>!b.walletId||b.walletId===wid);
+    const totalA=getTotalB(activeBal,wid);const fr=Math.max(0,activeBal-totalA);
+    let segs=rel.map(b=>({name:b.name,icon:b.icon,color:b.color,amount:calcB(b,activeBal)})).filter(s=>s.amount>0);
+    if(fr>0)segs.push({name:'حر',icon:'⬜',color:'#475569',amount:fr});
+    document.getElementById('wdist-chart').innerHTML=segs.map(s=>`<div class="dist-seg" style="flex:${(s.amount/activeBal)*100};background:${s.color};opacity:.83"></div>`).join('');
+    document.getElementById('wdist-legend').innerHTML=segs.map(s=>`<div class="legend-item"><div class="legend-dot" style="background:${s.color}"></div><span>${s.icon} ${s.name} <b style="color:var(--text)">${Math.round((s.amount/activeBal)*100)}%</b></span></div>`).join('');
+    document.getElementById('wdist-alloc').textContent=fmt(totalA)+' ر.س';
+    document.getElementById('wdist-free').textContent=fmt(fr)+' ر.س';
+  } else document.getElementById('wdist-card').style.display='none';
+
+  // Wallet list
+  const list=document.getElementById('wallet-list');
+  list.innerHTML=ws.wallets.length?ws.wallets.map(w=>{
+    const meta=WI[w.type]||WI.other;const isA=w.id===activeCtx;
+    const alloc=getTotalB(w.balance,w.id);const fr=w.balance-alloc;
+    return `<div class="wallet-item${isA?' active-wallet':''}" onclick="setCtx('${w.id}')">
+      <div class="w-icon-box" style="background:${meta.color}">${meta.icon}</div>
+      <div class="w-info">
+        <div class="w-name">${w.name}${isA?'<span class="badge-active">نشطة</span>':''}</div>
+        <div class="w-type">${meta.text}${w.desc?' • '+w.desc:''}</div>
+        <div style="margin-top:6px">
+          <div style="font-size:.58rem;color:var(--muted);margin-bottom:2px">مخصص ${fmt(alloc)} | حر ${fmt(fr)}</div>
+          <div class="prog-bar" style="height:4px;margin-top:0"><div class="prog-fill" style="width:${w.balance>0?Math.min(100,(alloc/w.balance)*100):0}%;background:var(--accent)"></div></div>
+        </div>
+        <div class="bal-actions">
+          <button class="bal-btn bal-add" onclick="event.stopPropagation();walletBalChange('${w.id}',1)">➕ إيداع</button>
+          <button class="bal-btn bal-sub" onclick="event.stopPropagation();walletBalChange('${w.id}',-1)">➖ سحب</button>
+        </div>
+      </div>
+      <div class="w-bal-box"><div class="w-bal">${fmt(w.balance)}</div><div class="w-bal-lbl">ر.س</div></div>
+      <div class="w-actions">
+        <button class="btn-icon" onclick="event.stopPropagation();editWallet('${w.id}')">✏️</button>
+        <button class="btn-icon" onclick="event.stopPropagation();deleteWallet('${w.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join(''):'<div class="empty-state"><div class="e-icon">💼</div><p>لا توجد محافظ — أضف الأولى</p></div>';
+
+  // Bucket selector
+  const bsel=document.getElementById('bucket-wsel');
+  bsel.innerHTML=ws.wallets.map(w=>{
+    const meta=WI[w.type]||WI.other;
+    return `<button class="wsel-h-btn${w.id===activeCtx?' active':''}" onclick="setCtx('${w.id}')">${meta.icon} ${w.name}</button>`;
+  }).join('');
+
+  // Bucket list
+  const blist=document.getElementById('bucket-list');
+  const aw2=ws.wallets.find(w=>w.id===activeCtx)||ws.wallets[0];
+  const awBal=aw2?aw2.balance:0;const awId=aw2?aw2.id:null;
+  const totalBkt=getTotalB(awBal,awId);
+  document.getElementById('unalloc-val').textContent=fmt(Math.max(0,awBal-totalBkt));
+  const relB=ws.buckets.filter(b=>!b.walletId||b.walletId===awId);
+  if(!ws.buckets.length){blist.innerHTML='<div class="empty-state"><div class="e-icon">🪣</div><p>أضف بنوداً مثل: توفير، طوارئ</p></div>';return;}
+  if(!relB.length){blist.innerHTML='<div class="empty-state"><div class="e-icon">🪣</div><p>لا توجد بنود لهذه المحفظة</p></div>';return;}
+  blist.innerHTML=relB.map(b=>{
+    const amt=calcB(b,awBal);const goalPct=b.goal>0?Math.min(100,Math.round((b.saved/b.goal)*100)):null;
+    return `<div class="bucket-item" style="border-right:3px solid ${b.color}">
+      <div class="bucket-header">
+        <div class="b-icon-box" style="background:${b.color}20">${b.icon}</div>
+        <div class="b-info"><div class="b-name">${b.name}</div><div class="b-meta">${b.method==='percent'?b.percent+'% من الرصيد':'مبلغ ثابت'}</div></div>
+        <div style="text-align:left"><div style="font-size:.93rem;font-weight:800;color:${b.color}">${fmt(amt)}</div><div style="font-size:.58rem;color:var(--muted)">ر.س/شهر</div></div>
+        <div style="display:flex;gap:3px;flex-shrink:0">
+          <button class="btn-icon" onclick="editBucket('${b.id}')">✏️</button>
+          <button class="btn-icon" onclick="deleteBucket('${b.id}')">🗑️</button>
+        </div>
+      </div>
+      ${b.goal>0?`<div><div class="prog-bar"><div class="prog-fill" style="width:${goalPct}%;background:${b.color}"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:.6rem;color:var(--muted);margin-top:2px">
+          <span>مجمّع: <b style="color:${b.color}">${fmt(b.saved||0)} ر.س</b></span>
+          <span>الهدف: ${fmt(b.goal)} ر.س (${goalPct}%)</span>
+        </div></div>`:''}
+    </div>`;
+  }).join('');
+}
+
+/* ══ INIT ══ */
+loadWs();
+document.getElementById('expDate').value=nowD.toISOString().split('T')[0];
+document.getElementById('subStart').value=nowD.toISOString().split('T')[0];
+// Restore last context
+try{const sc=localStorage.getItem('masroofati-ctx');if(sc)activeCtx=sc;}catch(e){}
+// context auto-saved inside setCtx directly
+renderAll();
+renderWalletPanel();
+renderSubs();
+selectTag('housing');
+
+// Safe resize/orientation handler — only redraws when report panel is visible with real width
+let _rt=null;
+function _safeRedrawCharts(){
+  clearTimeout(_rt);
+  _rt=setTimeout(()=>{
+    try{
+      const panel=document.getElementById('panel-report');
+      if(!panel||!panel.classList.contains('active'))return;
+      const sec=panel.querySelector('.report-section');
+      if(!sec||sec.clientWidth<20)return;
+      renderReport();
+    }catch(e){console.warn('chart redraw error',e);}
+  },300);
+}
+window.addEventListener('resize',_safeRedrawCharts);
+window.addEventListener('orientationchange',()=>setTimeout(_safeRedrawCharts,400));
+
+
+/* ══ PWA INSTALL ══ */
+let _deferredInstall = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _deferredInstall = e;
+  document.getElementById('pwa-install-bar').style.display = 'flex';
+});
+window.addEventListener('appinstalled', () => {
+  document.getElementById('pwa-install-bar').style.display = 'none';
+  _deferredInstall = null;
+});
+function installPWA(){
+  if(!_deferredInstall) return;
+  _deferredInstall.prompt();
+  _deferredInstall.userChoice.then(()=>{ _deferredInstall=null; document.getElementById('pwa-install-bar').style.display='none'; });
+}
+// Register service worker — يتحقق من التحديث عند كل فتح
+if('serviceWorker' in navigator){
+  window.addEventListener('load', async () => {
+    try {
+      const reg = await navigator.serviceWorker.register('sw.js');
+      // تحقق من وجود تحديث فوراً
+      reg.update();
+      // لما يجد تحديث جديد، خليه يأخذ السيطرة فوراً
+      reg.addEventListener('updatefound', () => {
+        const nw = reg.installing;
+        nw.addEventListener('statechange', () => {
+          if(nw.state === 'installed' && navigator.serviceWorker.controller){
+            nw.postMessage({type:'SKIP_WAITING'});
+          }
+        });
+      });
+      // لما يأخذ السيطرة، أعد تحميل الصفحة لتحميل الجديد
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if(!refreshing){ refreshing = true; window.location.reload(); }
+      });
+    } catch(e) {}
+  });
+}
+</script>
+
+<!-- PWA Install Banner -->
+<div id="pwa-install-bar" style="display:none;position:fixed;bottom:calc(72px + env(safe-area-inset-bottom,0px) + 8px);left:12px;right:12px;background:linear-gradient(135deg,#6c63ff,#8b5cf6);border-radius:14px;padding:12px 15px;z-index:500;align-items:center;gap:10px;box-shadow:0 4px 20px rgba(108,99,255,.4)">
+  <div style="font-size:1.3rem">📲</div>
+  <div style="flex:1">
+    <div style="font-size:.85rem;font-weight:700;color:#fff">ثبّت التطبيق</div>
+    <div style="font-size:.7rem;color:rgba(255,255,255,.75);margin-top:1px">أضفه لشاشتك الرئيسية للوصول السريع</div>
+  </div>
+  <button onclick="installPWA()" style="background:rgba(255,255,255,.25);border:1px solid rgba(255,255,255,.4);color:#fff;padding:8px 14px;border-radius:10px;font-family:var(--font);font-size:.82rem;font-weight:700;cursor:pointer">تثبيت</button>
+  <button onclick="this.parentElement.style.display='none'" style="background:none;border:none;color:rgba(255,255,255,.6);font-size:1.1rem;cursor:pointer;padding:4px">✕</button>
+</div>
+
+</body>
+</html>
