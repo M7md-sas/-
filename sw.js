@@ -1,15 +1,18 @@
-/* مالي — Service Worker v3 */
-const CACHE = 'malii-v3';
-const ASSETS = ['./index.html', './manifest.json', './icon-192.png', './icon-512.png'];
+/* مصروفاتي — Service Worker */
+const CACHE = 'masroofati-v1';
+const ASSETS = [
+  './index.html',
+  './manifest.json'
+];
 
-// Install
+// Install: cache core files
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())
   );
 });
 
-// Activate: امسح كل الكاشات القديمة
+// Activate: clean old caches
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
@@ -18,27 +21,21 @@ self.addEventListener('activate', e => {
   );
 });
 
-// Fetch: Network First — يجرب الإنترنت أولاً دايماً
+// Fetch: serve from cache, fallback to network
 self.addEventListener('fetch', e => {
+  // Only handle same-origin GET requests
   if (e.request.method !== 'GET') return;
   if (!e.request.url.startsWith(self.location.origin)) return;
 
   e.respondWith(
-    fetch(e.request)
-      .then(resp => {
-        if (resp && resp.status === 200) {
-          const clone = resp.clone();
-          caches.open(CACHE).then(c => c.put(e.request, clone));
-        }
+    caches.match(e.request).then(cached => {
+      if (cached) return cached;
+      return fetch(e.request).then(resp => {
+        if (!resp || resp.status !== 200 || resp.type !== 'basic') return resp;
+        const clone = resp.clone();
+        caches.open(CACHE).then(c => c.put(e.request, clone));
         return resp;
-      })
-      .catch(() =>
-        caches.match(e.request).then(cached => cached || caches.match('./index.html'))
-      )
+      }).catch(() => caches.match('./index.html'));
+    })
   );
-});
-
-// استقبل أمر التحديث الفوري
-self.addEventListener('message', e => {
-  if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
