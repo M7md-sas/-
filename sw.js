@@ -1,5 +1,5 @@
-/* مالي — Service Worker v3 */
-const CACHE = 'malii-v3';
+/* رياضة المرأة — Service Worker v1 */
+const CACHE = 'women-sports-v1';
 const ASSETS = ['./index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 // Install
