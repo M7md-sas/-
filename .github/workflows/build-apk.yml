@@ -48,28 +48,7 @@ jobs:
       - name: Fix app icon
         run: |
           pip install Pillow -q
-          python3 - << 'PYEOF'
-import os, shutil
-from PIL import Image
-
-img = Image.open("icon-512.png").convert("RGBA")
-res = "android/app/src/main/res"
-
-# استبدال جميع أحجام الأيقونة
-for dpi, size in [("mdpi",48),("hdpi",72),("xhdpi",96),("xxhdpi",144),("xxxhdpi",192)]:
-    d = f"{res}/mipmap-{dpi}"
-    os.makedirs(d, exist_ok=True)
-    r = img.resize((size, size), Image.LANCZOS)
-    r.save(f"{d}/ic_launcher.png")
-    r.save(f"{d}/ic_launcher_round.png")
-
-# حذف Adaptive Icons تماماً — يجبر أندرويد على استخدام PNG
-anydpi = f"{res}/mipmap-anydpi-v26"
-if os.path.exists(anydpi):
-    shutil.rmtree(anydpi)
-
-print("Done: custom icon applied!")
-PYEOF
+          python3 fix-icon.py
 
       - name: Build Debug APK
         run: |
