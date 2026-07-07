@@ -49,6 +49,28 @@ jobs:
       - name: Copy web assets to Android
         run: npx cap copy android
 
+      - name: Replace Android icons with custom icons
+        run: |
+          ICON="icon-512.png"
+          ICON_ROUND="icon-512.png"
+          RES="android/app/src/main/res"
+          sudo apt-get install -y imagemagick -q
+          for size in 48 72 96 144 192; do
+            case $size in
+              48)  dpi="mdpi"    ;;
+              72)  dpi="hdpi"    ;;
+              96)  dpi="xhdpi"   ;;
+              144) dpi="xxhdpi"  ;;
+              192) dpi="xxxhdpi" ;;
+            esac
+            mkdir -p "$RES/mipmap-$dpi"
+            convert "$ICON"      -resize ${size}x${size} "$RES/mipmap-$dpi/ic_launcher.png"
+            convert "$ICON_ROUND" -resize ${size}x${size} "$RES/mipmap-$dpi/ic_launcher_round.png"
+          done
+          # foreground for adaptive icon (larger canvas)
+          mkdir -p "$RES/mipmap-anydpi-v26"
+          convert "$ICON" -resize 108x108 "$RES/drawable/ic_launcher_foreground.png" 2>/dev/null || true
+
       # ── Debug APK (للتجربة الشخصية) ──────────────────────────
       - name: Build Debug APK
         run: |
