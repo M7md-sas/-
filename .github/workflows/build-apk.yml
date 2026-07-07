@@ -49,40 +49,27 @@ jobs:
         run: |
           pip install Pillow -q
           python3 - << 'PYEOF'
-          from PIL import Image
-          import os, shutil
+import os, shutil
+from PIL import Image
 
-          img = Image.open("icon-512.png").convert("RGBA")
-          res = "android/app/src/main/res"
+img = Image.open("icon-512.png").convert("RGBA")
+res = "android/app/src/main/res"
 
-          for dpi, size in [("mdpi",48),("hdpi",72),("xhdpi",96),("xxhdpi",144),("xxxhdpi",192)]:
-              d = f"{res}/mipmap-{dpi}"
-              os.makedirs(d, exist_ok=True)
-              r = img.resize((size, size), Image.LANCZOS)
-              r.save(f"{d}/ic_launcher.png")
-              r.save(f"{d}/ic_launcher_round.png")
+# استبدال جميع أحجام الأيقونة
+for dpi, size in [("mdpi",48),("hdpi",72),("xhdpi",96),("xxhdpi",144),("xxxhdpi",192)]:
+    d = f"{res}/mipmap-{dpi}"
+    os.makedirs(d, exist_ok=True)
+    r = img.resize((size, size), Image.LANCZOS)
+    r.save(f"{d}/ic_launcher.png")
+    r.save(f"{d}/ic_launcher_round.png")
 
-          os.makedirs(f"{res}/drawable", exist_ok=True)
-          img.resize((432, 432), Image.LANCZOS).save(f"{res}/drawable/ic_launcher_foreground.png")
-          fg_xml = f"{res}/drawable/ic_launcher_foreground.xml"
-          if os.path.exists(fg_xml):
-              os.remove(fg_xml)
-          print("Icons replaced successfully")
-          PYEOF
+# حذف Adaptive Icons تماماً — يجبر أندرويد على استخدام PNG
+anydpi = f"{res}/mipmap-anydpi-v26"
+if os.path.exists(anydpi):
+    shutil.rmtree(anydpi)
 
-          mkdir -p android/app/src/main/res/mipmap-anydpi-v26
-          cat > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml << 'XML'
-          <?xml version="1.0" encoding="utf-8"?>
-          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-              <background android:drawable="@color/ic_launcher_background"/>
-              <foreground android:drawable="@drawable/ic_launcher_foreground"/>
-          </adaptive-icon>
-          XML
-          cp android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml \
-             android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
-
-          find android/app/src/main/res -name "ic_launcher_background.xml" \
-            -exec sed -i 's|<color name="ic_launcher_background">.*</color>|<color name="ic_launcher_background">\#10b981</color>|g' {} \;
+print("Done: custom icon applied!")
+PYEOF
 
       - name: Build Debug APK
         run: |
