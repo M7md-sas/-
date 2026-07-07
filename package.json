@@ -1,0 +1,16 @@
+{
+  "name": "malii",
+  "version": "1.0.0",
+  "description": "تطبيق تتبع المصروفات الشخصية",
+  "private": true,
+  "scripts": {
+    "sync": "npx cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/core": "^6.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.0.0",
+    "@capacitor/android": "^6.0.0"
+  }
+}
